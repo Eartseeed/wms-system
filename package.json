@@ -1,0 +1,30 @@
+{
+  "name": "wms-gate-qc",
+  "version": "1.0.0",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "electron": "electron .",
+    "start": "concurrently \"npm run dev\" \"npm run electron\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "axios": "^1.16.1",
+    "electron": "^42.2.0",
+    "express": "^5.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^6.30.3",
+    "recharts": "^3.8.1",
+    "sqlite3": "^6.0.1",
+    "uuid": "^14.0.0",
+    "vite": "^8.0.14"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
