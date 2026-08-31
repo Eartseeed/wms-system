@@ -6,112 +6,121 @@ import ExportInvoice from "./pages/ExportInvoice";
 import StockManagement from "./pages/StockManagement";
 import Supplier from "./pages/Supplier";
 import SyncServer from "./pages/SyncServer";
+import UserManagement from "./pages/UserManagement";
+import Login from "./pages/Login";
+import Unauthorized from "./pages/Unauthorized";
 
 import "./App.css";
 
 function App() {
+  const [page, setPage] = useState("dashboard");
 
-  const [page, setPage] =
-    useState("dashboard");
+  const [user, setUser] = useState(() => {
+    const userData = localStorage.getItem("user");
+
+    return userData ? JSON.parse(userData) : null;
+  });
+
+  if (!user) {
+    return <Login onLogin={setUser} />;
+  }
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
 
   return (
-
     <div className="app-layout">
-
       <div className="sidebar">
+        <div className="logo">📦 Invoice System</div>
 
-        <div className="logo">
-          📦 Invoice System
+        <div className="menu-item" onClick={logout}>
+          🚪 Logout
         </div>
 
         <div
           className="menu-item"
-          onClick={() =>
-            setPage("dashboard")
-          }
+          onClick={() => setPage("dashboard")}
         >
           📊 Dashboard
         </div>
 
         <div
           className="menu-item"
-          onClick={() =>
-            setPage("import")
-          }
+          onClick={() => setPage("import")}
         >
           📥 Import Invoice
         </div>
 
         <div
           className="menu-item"
-          onClick={() =>
-            setPage("export")
-          }
+          onClick={() => setPage("export")}
         >
           📤 Export Invoice
         </div>
 
         <div
           className="menu-item"
-          onClick={() =>
-            setPage("stock")
-          }
+          onClick={() => setPage("stock")}
         >
           📦 Stock Management
         </div>
 
         <div
           className="menu-item"
-          onClick={() =>
-            setPage("supplier")
-          }
+          onClick={() => setPage("supplier")}
         >
           🏪 Supplier
         </div>
 
-        <div
-          className="menu-item"
-          onClick={() =>
-            setPage("sync")
-          }
-        >
-          🔄 Sync Main Server
-        </div>
+        {user?.role === "admin" && (
+          <div
+            className="menu-item"
+            onClick={() => setPage("users")}
+          >
+            👥 User Management
+          </div>
+        )}
 
+        {user?.role === "admin" && (
+          <div
+            className="menu-item"
+            onClick={() => setPage("sync")}
+          >
+            🔄 Sync Main Server
+          </div>
+        )}
       </div>
 
       <div className="content">
+        {page === "dashboard" && <Dashboard />}
 
-        {page === "dashboard" &&
-          <Dashboard />
-        }
+        {page === "import" && <ImportInvoice />}
 
-        {page === "import" &&
-          <ImportInvoice />
-        }
+        {page === "export" && <ExportInvoice />}
 
-        {page === "export" &&
-          <ExportInvoice />
-        }
+        {page === "stock" && <StockManagement />}
 
-        {page === "stock" &&
-          <StockManagement />
-        }
+        {page === "supplier" && <Supplier />}
 
-        {page === "supplier" &&
-          <Supplier />
-        }
+        {page === "users" &&
+          (user?.role === "admin" ? (
+            <UserManagement />
+          ) : (
+            <Unauthorized />
+          ))}
 
         {page === "sync" &&
-          <SyncServer />
-        }
-
+          (user?.role === "admin" ? (
+            <SyncServer />
+          ) : (
+            <Unauthorized />
+          ))}
       </div>
-
     </div>
-
   );
-
 }
 
 export default App;

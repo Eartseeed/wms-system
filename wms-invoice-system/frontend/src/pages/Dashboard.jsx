@@ -21,7 +21,7 @@ function Dashboard() {
   async function loadDashboard(){
 
     const res = await fetch(
-      `http://localhost:3002/dashboard?dateFrom=${dateFrom}&dateTo=${dateTo}`
+      `http://localhost:3002/api/dashboard?dateFrom=${dateFrom}&dateTo=${dateTo}`
     );
 
     const data = await res.json();
@@ -39,7 +39,7 @@ function Dashboard() {
     async function loadRecentImport() {
       try {
         const res = await fetch(
-          `http://localhost:3002/dashboard/recent-import?page=${importPage}&dateFrom=${dateFrom}&dateTo=${dateTo}`
+          `http://localhost:3002/api/dashboard/recent-import?page=${importPage}&dateFrom=${dateFrom}&dateTo=${dateTo}`
         );
         const data = await res.json();
         console.log("IMPORT", data);
@@ -56,7 +56,7 @@ function Dashboard() {
     async function loadRecentExport() {
       try {
         const res = await fetch(
-          `http://localhost:3002/dashboard/recent-export?page=${exportPage}&dateFrom=${dateFrom}&dateTo=${dateTo}`
+          `http://localhost:3002/api/dashboard/recent-export?page=${exportPage}&dateFrom=${dateFrom}&dateTo=${dateTo}`
         );
         const data = await res.json();
         console.log("EXPORT", data);
@@ -73,7 +73,7 @@ function Dashboard() {
     async function loadPages() {
       try {
         const resImp = await fetch(
-          `http://localhost:3002/dashboard/import-pages?dateFrom=${dateFrom}&dateTo=${dateTo}`
+          `http://localhost:3002/api/dashboard/import-pages?dateFrom=${dateFrom}&dateTo=${dateTo}`
         );
         const impData = await resImp.json();
         setImportPages(impData.pages || 1);
@@ -82,7 +82,7 @@ function Dashboard() {
       }
       try {
         const resExp = await fetch(
-          `http://localhost:3002/dashboard/export-pages?dateFrom=${dateFrom}&dateTo=${dateTo}`
+          `http://localhost:3002/api/dashboard/export-pages?dateFrom=${dateFrom}&dateTo=${dateTo}`
         );
         const expData = await resExp.json();
         setExportPages(expData.pages || 1);
@@ -227,7 +227,49 @@ function Dashboard() {
   </div>
 
 </div>
+<div className="summary-card orange">
 
+  <div className="card-icon">
+
+    🏪
+
+  </div>
+
+  <div className="card-info">
+
+    <span>Suppliers</span>
+
+    <h2>
+
+      {Number(summary.supplierCount || 0)}
+
+    </h2>
+
+  </div>
+
+</div>
+
+<div className="summary-card red">
+
+  <div className="card-icon">
+
+    👤
+
+  </div>
+
+  <div className="card-info">
+
+    <span>Users</span>
+
+    <h2>
+
+      {Number(summary.userCount || 0)}
+
+    </h2>
+
+  </div>
+
+</div>
       {/* MOVEMENT */}
       <div className="panel">
         <h3>📈 Inventory Movement</h3>
