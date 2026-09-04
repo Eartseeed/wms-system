@@ -360,8 +360,6 @@ class StockService {
 
     // =====================================================
     // GET STOCK BY PRODUCT
-    //
-    // ใช้สำหรับ Stock หลัก
     // =====================================================
 
     async getByProduct(
@@ -391,15 +389,6 @@ class StockService {
 
     // =====================================================
     // FIND STOCK FOR RECEIVE
-    //
-    // Product เดียวกัน
-    // + Warehouse
-    // + Location
-    // + Lot
-    // + Batch
-    // + Serial
-    //
-    // จะใช้ Stock Row เดิมถ้าตรงกัน
     // =====================================================
 
     async findStockForReceive(
@@ -570,26 +559,28 @@ class StockService {
 
 
                     if (
-                        warehouseId !== null
-                        &&
+                        warehouseId !== null &&
                         warehouseId !== undefined
-                        &&
-                        String(
-                            stock.warehouse_id
-                        ) !==
-                        String(
-                            warehouseId
-                        )
                     ) {
 
-                        return false;
+                        if (
+                            String(
+                                stock.warehouse_id
+                            ) !==
+                            String(
+                                warehouseId
+                            )
+                        ) {
+
+                            return false;
+
+                        }
 
                     }
 
 
                     if (
-                        location
-                        &&
+                        location &&
                         this.textValue(
                             stock.location
                         ) !==
@@ -602,8 +593,7 @@ class StockService {
 
 
                     if (
-                        lotNo
-                        &&
+                        lotNo &&
                         this.textValue(
                             stock.lot_no
                         ) !==
@@ -616,8 +606,7 @@ class StockService {
 
 
                     if (
-                        batchNo
-                        &&
+                        batchNo &&
                         this.textValue(
                             stock.batch_no
                         ) !==
@@ -630,8 +619,7 @@ class StockService {
 
 
                     if (
-                        serialNo
-                        &&
+                        serialNo &&
                         this.textValue(
                             stock.serial_no
                         ) !==
@@ -658,7 +646,23 @@ class StockService {
     // =====================================================
     // INSERT STOCK MOVEMENT
     //
-    // ใช้เฉพาะ column ที่ service นี้รองรับ
+    // IMPORTANT
+    //
+    // stock_movements schema ปัจจุบันใช้:
+    //
+    // warehouse_from
+    // warehouse_to
+    //
+    // location_from
+    // location_to
+    //
+    // ไม่มี:
+    //
+    // unit
+    // warehouse_id
+    // location
+    //
+    // ดังนั้นห้าม INSERT column เหล่านั้น
     //
     // =====================================================
 
@@ -666,9 +670,120 @@ class StockService {
         data = {}
     ) {
 
+        const movementType =
+            this.textValue(
+                data.movement_type
+            );
+
+
+        const isIssue =
+            movementType === "ISSUE" ||
+            movementType === "OUT" ||
+            movementType === "REVERSE_RECEIVE";
+
+
+        const isReceive =
+            movementType === "RECEIVE" ||
+            movementType === "IN" ||
+            movementType === "REVERSE_ISSUE";
+
+
+        let warehouseFrom =
+            data.warehouse_from ??
+            null;
+
+
+        let warehouseTo =
+            data.warehouse_to ??
+            null;
+
+
+        let locationFrom =
+            this.textValue(
+                data.location_from
+            );
+
+
+        let locationTo =
+            this.textValue(
+                data.location_to
+            );
+
+
+        // -------------------------------------------------
+        // Backward-compatible mapping
+        //
+        // Service เดิมส่ง:
+        //
+        // warehouse_id
+        // location
+        //
+        // แปลงให้เข้ากับ schema ใหม่
+        // -------------------------------------------------
+
+        if (
+            data.warehouse_id !== undefined &&
+            data.warehouse_id !== null
+        ) {
+
+            if (
+                isIssue
+            ) {
+
+                warehouseFrom =
+                    data.warehouse_id;
+
+            }
+
+
+            if (
+                isReceive
+            ) {
+
+                warehouseTo =
+                    data.warehouse_id;
+
+            }
+
+        }
+
+
+        if (
+            data.location !== undefined &&
+            data.location !== null
+        ) {
+
+            if (
+                isIssue
+            ) {
+
+                locationFrom =
+                    this.textValue(
+                        data.location
+                    );
+
+            }
+
+
+            if (
+                isReceive
+            ) {
+
+                locationTo =
+                    this.textValue(
+                        data.location
+                    );
+
+            }
+
+        }
+
+
         const result =
             await run(`
                 INSERT INTO stock_movements (
+
+                    movement_no,
 
                     movement_type,
 
@@ -678,27 +793,33 @@ class StockService {
 
                     stock_id,
 
+                    reference_type,
+
+                    reference_no,
+
                     qty,
 
-                    unit,
+                    before_qty,
 
-                    warehouse_id,
+                    after_qty,
 
-                    location,
+                    unit_cost,
+
+                    total_cost,
+
+                    warehouse_from,
+
+                    warehouse_to,
+
+                    location_from,
+
+                    location_to,
 
                     lot_no,
 
                     batch_no,
 
                     serial_no,
-
-                    reference_type,
-
-                    reference_no,
-
-                    unit_cost,
-
-                    total_cost,
 
                     remark,
 
@@ -724,14 +845,20 @@ class StockService {
                     ?,
                     ?,
                     ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
                     ?
 
                 )
             `, [
 
                 this.textValue(
-                    data.movement_type
+                    data.movement_no
                 ),
+
+                movementType,
 
                 this.textValue(
                     data.product_code
@@ -744,21 +871,46 @@ class StockService {
                 data.stock_id ??
                 null,
 
+                this.textValue(
+                    data.reference_type
+                ),
+
+                this.textValue(
+                    data.reference_no
+                ),
+
                 this.numberValue(
                     data.qty,
                     0
                 ),
 
-                this.textValue(
-                    data.unit
+                this.numberValue(
+                    data.before_qty,
+                    0
                 ),
 
-                data.warehouse_id ??
-                null,
-
-                this.textValue(
-                    data.location
+                this.numberValue(
+                    data.after_qty,
+                    0
                 ),
+
+                this.numberValue(
+                    data.unit_cost,
+                    0
+                ),
+
+                this.numberValue(
+                    data.total_cost,
+                    0
+                ),
+
+                warehouseFrom,
+
+                warehouseTo,
+
+                locationFrom,
+
+                locationTo,
 
                 this.textValue(
                     data.lot_no
@@ -770,24 +922,6 @@ class StockService {
 
                 this.textValue(
                     data.serial_no
-                ),
-
-                this.textValue(
-                    data.reference_type
-                ),
-
-                this.textValue(
-                    data.reference_no
-                ),
-
-                this.numberValue(
-                    data.unit_cost,
-                    0
-                ),
-
-                this.numberValue(
-                    data.total_cost,
-                    0
                 ),
 
                 this.textValue(
@@ -1265,6 +1399,10 @@ class StockService {
 
         await this.insertMovement({
 
+            movement_no:
+                options.movement_no ||
+                "",
+
             movement_type:
                 options.movement_type ||
                 "RECEIVE",
@@ -1282,14 +1420,26 @@ class StockService {
             qty:
                 receiveQty,
 
-            unit:
-                stock.unit ||
-                unit,
+            before_qty:
+                Math.max(
+                    0,
+                    this.numberValue(
+                        stock.qty,
+                        0
+                    ) -
+                    receiveQty
+                ),
 
-            warehouse_id:
+            after_qty:
+                this.numberValue(
+                    stock.qty,
+                    0
+                ),
+
+            warehouse_to:
                 stock.warehouse_id,
 
-            location:
+            location_to:
                 stock.location,
 
             lot_no:
@@ -1665,6 +1815,10 @@ class StockService {
 
             await this.insertMovement({
 
+                movement_no:
+                    options.movement_no ||
+                    "",
+
                 movement_type:
                     options.movement_type ||
                     "ISSUE",
@@ -1683,15 +1837,16 @@ class StockService {
                 qty:
                     deduct,
 
-                unit:
-                    stock.unit ||
-                    options.unit ||
-                    "",
+                before_qty:
+                    currentQty,
 
-                warehouse_id:
+                after_qty:
+                    newQty,
+
+                warehouse_from:
                     stock.warehouse_id,
 
-                location:
+                location_from:
                     stock.location,
 
                 lot_no:
@@ -1848,13 +2003,6 @@ class StockService {
                 reverseQty
             );
 
-
-        // =================================================
-        // เลือกจาก Stock ที่มีของก่อน
-        //
-        // ใช้ id DESC
-        // เพื่อ reverse record ล่าสุดก่อน
-        // =================================================
 
         const candidates =
             rows
@@ -2052,6 +2200,10 @@ class StockService {
 
             await this.insertMovement({
 
+                movement_no:
+                    options.movement_no ||
+                    "",
+
                 movement_type:
                     options.movement_type ||
                     "REVERSE_RECEIVE",
@@ -2070,14 +2222,16 @@ class StockService {
                 qty:
                     removable,
 
-                unit:
-                    stock.unit ||
-                    "",
+                before_qty:
+                    currentQty,
 
-                warehouse_id:
+                after_qty:
+                    newQty,
+
+                warehouse_from:
                     stock.warehouse_id,
 
-                location:
+                location_from:
                     stock.location,
 
                 lot_no:
@@ -2151,7 +2305,6 @@ class StockService {
     // REVERSE ISSUE
     //
     // ใช้ตอน Edit / Rollback Export
-    //
     // =====================================================
 
     async reverseIssue(
@@ -2160,25 +2313,12 @@ class StockService {
         options = {}
     ) {
 
-        const code =
-            this.normalizeProductCode(
-                productCode
-            );
-
-
-        const reverseQty =
-            this.positiveNumber(
-                quantity,
-                "Reverse issue quantity"
-            );
-
-
         const result =
             await this.receive(
 
-                code,
+                productCode,
 
-                reverseQty,
+                quantity,
 
                 {
 

@@ -1,3 +1,64 @@
+// =========================================================
+// CWMS DATABASE INITIALIZATION
+//
+// File:
+// backend/database/init.js
+//
+// หน้าที่:
+//
+// 1. สร้าง Database Schema ทั้งหมด
+// 2. ตรวจสอบ Table ที่มีอยู่
+// 3. ตรวจสอบ Column ที่ขาด
+// 4. เพิ่ม Column ที่ขาดโดยไม่ลบข้อมูลเดิม
+// 5. รองรับ Database รุ่นเก่า
+// 6. เตรียม Database ให้พร้อมก่อน Server เริ่มทำงาน
+//
+// =========================================================
+//
+// ลำดับ:
+//
+// CORE / SECURITY
+//      ↓
+// MASTER DATA
+//      ↓
+// STOCK
+//      ↓
+// STOCK MOVEMENTS
+//      ↓
+// IMPORT
+//      ↓
+// EXPORT
+//      ↓
+// SYSTEM
+//      ↓
+// MACHINE / SYNC
+//      ↓
+// MIGRATION
+//
+// IMPORTANT:
+//
+// IMPORT ใช้:
+//     imports
+//
+// EXPORT ใช้:
+//     export_invoice
+//
+// ห้ามสร้าง Table ซ้ำ:
+//
+// import_invoice
+// import_items
+// exports
+// export_items
+//
+// เพราะไม่ใช่ Table หลักของ Flow ปัจจุบัน
+//
+// =========================================================
+
+
+// =========================================================
+// DATABASE CONNECTION
+// =========================================================
+
 const {
     db,
     run
@@ -5,52 +66,6 @@ const {
     require(
         "../config/database"
     );
-
-
-// =========================================================
-// DATABASE INITIALIZATION
-//
-// Path:
-//
-// backend/database/init.js
-//
-// =========================================================
-//
-// หน้าที่:
-//
-// 1. สร้างตารางใหม่
-//
-// 2. ตรวจสอบตารางเดิม
-//
-// 3. เพิ่ม Column ที่ขาด
-//
-// 4. รักษาข้อมูลเดิม
-//
-// 5. เตรียม Database ก่อน Server ทำงาน
-//
-// =========================================================
-//
-// IMPORTANT
-//
-// ลำดับการสร้าง Table มีความสำคัญ
-//
-// CORE
-//      ↓
-// MASTER DATA
-//      ↓
-// STOCK
-//      ↓
-// MOVEMENT
-//      ↓
-// IMPORT / EXPORT
-//      ↓
-// SYSTEM
-//      ↓
-// SYNC
-//      ↓
-// MIGRATION
-//
-// =========================================================
 
 
 // =========================================================
@@ -99,41 +114,43 @@ const createStockMovements =
     );
 
 
+// =========================================================
+// IMPORT
+//
+// CANONICAL TABLE:
+//     imports
+//
+// ImportService / ImportController / Dashboard / Report
+// ใช้ imports เป็น Table หลัก
+//
+// =========================================================
+
 const createImports =
     require(
         "./schema/imports"
     );
 
 
-const createImportItems =
-    require(
-        "./schema/importItems"
-    );
-
-
-const createImportInvoice =
-    require(
-        "./schema/importInvoice"
-    );
-
-
-const createExports =
-    require(
-        "./schema/exports"
-    );
-
-
-const createExportItems =
-    require(
-        "./schema/exportItems"
-    );
-
+// =========================================================
+// EXPORT
+//
+// CANONICAL TABLE:
+//     export_invoice
+//
+// ExportService / ExportController / Dashboard / Report
+// ใช้ export_invoice เป็น Table หลัก
+//
+// =========================================================
 
 const createExportInvoice =
     require(
         "./schema/exportInvoice"
     );
 
+
+// =========================================================
+// SYSTEM
+// =========================================================
 
 const createNotifications =
     require(
@@ -152,6 +169,10 @@ const createUploads =
         "./schema/uploads"
     );
 
+
+// =========================================================
+// MACHINE / SYNC
+// =========================================================
 
 const createMachines =
     require(
@@ -175,18 +196,6 @@ const createSyncQueue =
 // GET TABLE COLUMNS
 //
 // อ่าน Column ทั้งหมดจาก SQLite
-//
-// ตัวอย่าง:
-//
-// PRAGMA table_info(stock)
-//
-// Return:
-//
-// [
-//     "id",
-//     "product_code",
-//     "qty"
-// ]
 //
 // =========================================================
 
@@ -251,7 +260,7 @@ async function getTableColumns(
 // =========================================================
 // CHECK TABLE EXISTS
 //
-// ตรวจสอบ Table ก่อนทำ Migration
+// ตรวจสอบว่า Table มีอยู่หรือไม่
 //
 // =========================================================
 
@@ -327,22 +336,17 @@ async function tableExists(
 // =========================================================
 // ENSURE COLUMN
 //
-// ตรวจสอบว่า Column มีอยู่แล้วหรือไม่
+// ตรวจสอบ Column ก่อนเพิ่ม
+//
+// ถ้ามีอยู่แล้ว:
+//     ไม่ทำอะไร
 //
 // ถ้ายังไม่มี:
+//     ALTER TABLE ADD COLUMN
 //
-// ALTER TABLE
-// ADD COLUMN
+// IMPORTANT:
 //
-// =========================================================
-//
-// IMPORTANT
-//
-// ฟังก์ชันนี้:
-//
-// - ไม่ลบข้อมูลเก่า
-// - ไม่สร้าง Column ซ้ำ
-// - ปลอดภัยสำหรับ Migration
+// ฟังก์ชันนี้ไม่ลบข้อมูลเดิม
 //
 // =========================================================
 
@@ -424,6 +428,11 @@ async function ensureColumn(
     );
 
 
+    console.log(
+        `Added column ${tableName}.${columnName}`
+    );
+
+
     return true;
 
 }
@@ -432,25 +441,19 @@ async function ensureColumn(
 // =========================================================
 // MIGRATE DATABASE
 //
-// Migration สำหรับ:
+// ใช้สำหรับ Database รุ่นเก่า
 //
-// Database เดิม
+// IMPORTANT:
 //
-// ใช้หลัง Schema ทั้งหมดถูกสร้างแล้ว
+// Schema ต้องสร้างเสร็จก่อน
 //
-// =========================================================
+// Migration จะ:
 //
-// IMPORTANT
-//
-// ถ้า Schema ล่าสุดมี Migration ของตัวเอง:
-//
-// เช่น:
-//
-// stockMovements.js
-//
-// ก็ยังสามารถเรียก ensureColumn ซ้ำได้
-//
-// เพราะ ensureColumn จะตรวจสอบก่อน
+// - ตรวจสอบ Table
+// - ตรวจสอบ Column
+// - เพิ่มเฉพาะ Column ที่ไม่มี
+// - ไม่ลบข้อมูลเดิม
+// - ไม่สร้าง Table ซ้ำ
 //
 // =========================================================
 
@@ -479,6 +482,17 @@ async function migrateDatabase() {
     // =====================================================
     // STOCK
     // =====================================================
+
+    await ensureColumn(
+
+        "stock",
+
+        "unit",
+
+        "TEXT"
+
+    );
+
 
     await ensureColumn(
 
@@ -622,7 +636,15 @@ async function migrateDatabase() {
 
     );
 
+ await ensureColumn(
 
+        "stock",
+
+        "created_by",
+
+        "TEXT"
+
+    );
     await ensureColumn(
 
         "stock",
@@ -636,35 +658,29 @@ async function migrateDatabase() {
 
     // =====================================================
     // STOCK MOVEMENTS
-    //
-    // รองรับฐานข้อมูลเก่า
-    //
-    // Schema ล่าสุดจะมี:
-    //
-    // movement_no
-    // product_code
-    // product_name
-    // stock_id
-    // reference_type
-    // reference_no
-    // movement_type
-    // qty
-    // before_qty
-    // after_qty
-    // unit_cost
-    // total_cost
-    // warehouse_from
-    // warehouse_to
-    // location_from
-    // location_to
-    // lot_no
-    // batch_no
-    // serial_no
-    // remark
-    // created_by
-    // created_at
-    //
     // =====================================================
+
+    // -----------------------------------------------------
+    // IMPORTANT
+    //
+    // Import / Stock Movement ใช้ unit
+    //
+    // Database รุ่นเก่าบางตัวไม่มี column นี้
+    //
+    // ถ้าไม่มี ให้เพิ่มอัตโนมัติ
+    // โดยไม่ลบข้อมูลเดิม
+    // -----------------------------------------------------
+
+    await ensureColumn(
+
+        "stock_movements",
+
+        "unit",
+
+        "TEXT"
+
+    );
+
 
     await ensureColumn(
 
@@ -911,7 +927,8 @@ async function migrateDatabase() {
     // =====================================================
     // IMPORTS
     //
-    // เอกสาร Import หลัก
+    // CANONICAL TABLE:
+    //     imports
     //
     // =====================================================
 
@@ -995,153 +1012,6 @@ async function migrateDatabase() {
     await ensureColumn(
 
         "imports",
-
-        "updated_at",
-
-        "DATETIME"
-
-    );
-
-
-    // =====================================================
-    // EXPORTS
-    //
-    // เอกสาร Export หลัก
-    //
-    // =====================================================
-
-    await ensureColumn(
-
-        "exports",
-
-        "origin_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "exports",
-
-        "acdd_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "exports",
-
-        "updated_at",
-
-        "DATETIME"
-
-    );
-
-
-    // =====================================================
-    // IMPORT INVOICE
-    //
-    // ตารางนี้ยังคงอยู่
-    // เพื่อรองรับโครงสร้างเดิมของระบบ
-    //
-    // =====================================================
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "invoice_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "acdd_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "formd_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "truck_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "payment_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "fda_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "import_license_file",
-
-        "TEXT"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
-
-        "created_at",
-
-        "DATETIME"
-
-    );
-
-
-    await ensureColumn(
-
-        "import_invoice",
 
         "updated_at",
 
@@ -1153,9 +1023,76 @@ async function migrateDatabase() {
     // =====================================================
     // EXPORT INVOICE
     //
-    // รองรับข้อมูลเดิม
+    // CANONICAL TABLE:
+    //     export_invoice
     //
     // =====================================================
+
+    await ensureColumn(
+
+        "export_invoice",
+
+        "invoice_file",
+
+        "TEXT"
+
+    );
+
+
+    await ensureColumn(
+
+        "export_invoice",
+
+        "payment_file",
+
+        "TEXT"
+
+    );
+
+
+    await ensureColumn(
+
+        "export_invoice",
+
+        "formd_file",
+
+        "TEXT"
+
+    );
+
+
+    await ensureColumn(
+
+        "export_invoice",
+
+        "phytos_file",
+
+        "TEXT"
+
+    );
+
+
+    await ensureColumn(
+
+        "export_invoice",
+
+        "tax_file",
+
+        "TEXT"
+
+    );
+
+
+    await ensureColumn(
+
+        "export_invoice",
+
+        "export_license_file",
+
+        "TEXT"
+
+    );
+
 
     await ensureColumn(
 
@@ -1201,8 +1138,23 @@ async function migrateDatabase() {
     );
 
 
+    // =====================================================
+    // MIGRATION COMPLETE
+    // =====================================================
+
+    console.log(
+        "======================================"
+    );
+
+
     console.log(
         "Database Schema Check Complete"
+    );
+
+
+    console.log(
+        "======================================"
+
     );
 
 }
@@ -1211,27 +1163,17 @@ async function migrateDatabase() {
 // =========================================================
 // INITIALIZE DATABASE
 //
-// จุดเริ่มต้นของ Database
-//
-// =========================================================
-//
 // ลำดับ:
 //
-// 1. Core
-//
-// 2. Master Data
-//
-// 3. Stock
-//
-// 4. Import
-//
-// 5. Export
-//
-// 6. System
-//
-// 7. Sync
-//
-// 8. Migration
+// 1. CORE / SECURITY
+// 2. MASTER DATA
+// 3. STOCK
+// 4. STOCK MOVEMENTS
+// 5. IMPORT
+// 6. EXPORT
+// 7. SYSTEM
+// 8. MACHINE / SYNC
+// 9. MIGRATION
 //
 // =========================================================
 
@@ -1304,9 +1246,6 @@ async function initializeDatabase() {
 
         // =================================================
         // 3. STOCK
-        //
-        // Stock ต้องสร้างก่อน Movement
-        //
         // =================================================
 
         console.log(
@@ -1316,6 +1255,10 @@ async function initializeDatabase() {
         await createStock();
 
 
+        // =================================================
+        // 4. STOCK MOVEMENTS
+        // =================================================
+
         console.log(
             "createStockMovements"
         );
@@ -1324,7 +1267,15 @@ async function initializeDatabase() {
 
 
         // =================================================
-        // 4. IMPORT
+        // 5. IMPORT
+        //
+        // CANONICAL TABLE:
+        //     imports
+        //
+        // ไม่สร้าง:
+        //     import_invoice
+        //     import_items
+        //
         // =================================================
 
         console.log(
@@ -1334,37 +1285,17 @@ async function initializeDatabase() {
         await createImports();
 
 
-        console.log(
-            "createImportItems"
-        );
-
-        await createImportItems();
-
-
-        console.log(
-            "createImportInvoice"
-        );
-
-        await createImportInvoice();
-
-
         // =================================================
-        // 5. EXPORT
+        // 6. EXPORT
+        //
+        // CANONICAL TABLE:
+        //     export_invoice
+        //
+        // ไม่สร้าง:
+        //     exports
+        //     export_items
+        //
         // =================================================
-
-        console.log(
-            "createExports"
-        );
-
-        await createExports();
-
-
-        console.log(
-            "createExportItems"
-        );
-
-        await createExportItems();
-
 
         console.log(
             "createExportInvoice"
@@ -1374,7 +1305,7 @@ async function initializeDatabase() {
 
 
         // =================================================
-        // 6. SYSTEM
+        // 7. SYSTEM
         // =================================================
 
         console.log(
@@ -1399,7 +1330,7 @@ async function initializeDatabase() {
 
 
         // =================================================
-        // 7. MACHINE / SYNC
+        // 8. MACHINE / SYNC
         // =================================================
 
         console.log(
@@ -1424,12 +1355,9 @@ async function initializeDatabase() {
 
 
         // =================================================
-        // 8. MIGRATION
+        // 9. MIGRATION
         //
-        // ต้องอยู่ท้ายสุด
-        //
-        // เพราะ Table ทั้งหมด
-        // ต้องถูกสร้างก่อน
+        // ต้องทำหลังจาก Table ทั้งหมดถูกสร้างแล้ว
         //
         // =================================================
 
@@ -1437,7 +1365,7 @@ async function initializeDatabase() {
 
 
         // =================================================
-        // READY
+        // DATABASE READY
         // =================================================
 
         console.log(
@@ -1451,7 +1379,7 @@ async function initializeDatabase() {
 
 
         console.log(
-            "Database Ready"
+            "CWMS Database Ready"
         );
 
 
@@ -1462,14 +1390,27 @@ async function initializeDatabase() {
 
         return true;
 
-
     } catch (
         error
     ) {
 
         console.error(
-            "Database initialization failed:",
+            "======================================"
+        );
+
+
+        console.error(
+            "CWMS Database initialization failed"
+        );
+
+
+        console.error(
             error
+        );
+
+
+        console.error(
+            "======================================"
         );
 
 

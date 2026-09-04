@@ -64,6 +64,11 @@ function createStock() {
 
                 status INTEGER DEFAULT 1,
 
+                -- เพิ่มเพื่อรองรับ created_by จาก StockService
+                -- ไม่กระทบ Column เดิม
+
+                created_by TEXT,
+
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

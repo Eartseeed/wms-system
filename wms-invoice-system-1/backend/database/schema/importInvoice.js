@@ -1,51 +1,58 @@
-const { run } = require("../../config/database");
+// =========================================================
+// CWMS IMPORT INVOICE SCHEMA
+//
+// File:
+// backend/database/schema/importInvoice.js
+//
+// สถานะ:
+// LEGACY / COMPATIBILITY
+//
+// =========================================================
+//
+// IMPORTANT:
+//
+// Flow ปัจจุบันของ Import ใช้ Table:
+//
+//     imports
+//
+// เป็น Table หลักเพียงตัวเดียว
+//
+// ไม่ใช้:
+//
+//     import_invoice
+//
+// เพราะข้อมูล Invoice + รายการสินค้า + Product Type
+// + Qty + Weight + Price + Supplier
+// ถูกเก็บใน:
+//
+//     imports
+//
+// ไฟล์นี้จึงไม่สร้าง Table import_invoice ใหม่
+//
+// =========================================================
 
-module.exports = async () => {
 
-    await run(`
-        CREATE TABLE IF NOT EXISTS import_invoice (
+async function createImportInvoice() {
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    // -----------------------------------------------------
+    // LEGACY TABLE
+    //
+    // ไม่สร้าง import_invoice เพิ่ม
+    //
+    // เหตุผล:
+    // ป้องกันข้อมูล Import ถูกแยกไปอยู่คนละ Table
+    // และป้องกัน Backend ใช้ Table ผิดตัว
+    // -----------------------------------------------------
 
-            invoice_no TEXT,
+    console.log(
+        "ℹ import_invoice is legacy and is not used"
+    );
 
-            product_name TEXT,
+}
 
-            qty REAL,
 
-            unit TEXT,
+// =========================================================
+// EXPORT
+// =========================================================
 
-            unit_weight REAL,
-
-            weight REAL,
-
-            unit_price REAL,
-
-            total_price REAL,
-
-            supplier TEXT,
-
-            invoice_date TEXT,
-
-            invoice_file TEXT,
-
-            payment_file TEXT,
-
-            formd_file TEXT,
-
-            truck_file TEXT,
-
-            fda_file TEXT,
-
-            import_license_file TEXT,
-
-            acdd_file TEXT,
-
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-
-        )
-    `);
-
-};  
+module.exports = createImportInvoice;

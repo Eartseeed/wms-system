@@ -107,12 +107,59 @@ db.serialize(() => {
 
 // =========================================================
 // RUN
+//
+// รองรับ 2 รูปแบบ
+//
+// 1. Promise
+//    const result = await run(sql, params);
+//
+// 2. SQLite callback
+//    db.run(sql, params, callback);
+//
+// เพื่อไม่ให้ service เดิมที่ใช้ callback
+// เช่น auditService.js ได้รับผลกระทบ
 // =========================================================
 
 function run(
     sql,
-    params = []
+    params = [],
+    callback = null
 ) {
+
+    // -----------------------------------------------------
+    // CALLBACK MODE
+    // -----------------------------------------------------
+
+    if (typeof callback === "function") {
+
+        return db.run(
+            sql,
+            params,
+            function (err) {
+
+                if (err) {
+
+                    return callback.call(
+                        this,
+                        err
+                    );
+
+                }
+
+                callback.call(
+                    this,
+                    null
+                );
+
+            }
+        );
+
+    }
+
+
+    // -----------------------------------------------------
+    // PROMISE MODE
+    // -----------------------------------------------------
 
     return new Promise(
         (resolve, reject) => {

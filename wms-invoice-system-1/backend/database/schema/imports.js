@@ -6,64 +6,97 @@ function createImports() {
 
         db.run(`
 
-        CREATE TABLE IF NOT EXISTS imports (
+            CREATE TABLE IF NOT EXISTS imports (
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            invoice_no TEXT,
+                invoice_no TEXT,
 
-            product_code TEXT,
+                product_code TEXT,
 
-            product_name TEXT,
+                product_name TEXT,
 
-            qty REAL DEFAULT 0,
+                product_type TEXT,
 
-            unit TEXT,
+                qty REAL DEFAULT 0,
 
-            unit_weight REAL DEFAULT 0,
+                unit TEXT,
 
-            weight REAL DEFAULT 0,
+                unit_weight REAL DEFAULT 0,
 
-            unit_price REAL DEFAULT 0,
+                weight REAL DEFAULT 0,
 
-            total_price REAL DEFAULT 0,
+                unit_price REAL DEFAULT 0,
 
-            supplier TEXT,
+                total_price REAL DEFAULT 0,
 
-            invoice_date DATE,
+                supplier TEXT,
 
-            invoice_file TEXT,
+                warehouse_id INTEGER,
 
-            acdd_file TEXT,
+                location TEXT,
 
-            formd_file TEXT,
+                rack TEXT,
 
-            truck_file TEXT,
+                shelf TEXT,
 
-            payment_file TEXT,
+                bin TEXT,
 
-            fda_file TEXT,
+                lot_no TEXT,
 
-            import_license_file TEXT,
+                batch_no TEXT,
 
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                serial_no TEXT,
 
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                manufacture_date DATE,
 
-        )
+                expire_date DATE,
+
+                receive_date DATE,
+
+                invoice_date DATE,
+
+                invoice_file TEXT,
+
+                acdd_file TEXT,
+
+                formd_file TEXT,
+
+                truck_file TEXT,
+
+                payment_file TEXT,
+
+                fda_file TEXT,
+
+                import_license_file TEXT,
+
+                created_by TEXT,
+
+                updated_by TEXT,
+
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+            )
 
         `, (err) => {
 
             if (err) {
 
-                console.error("❌ Create imports table failed");
+                console.error(
+                    "❌ Create imports table failed"
+                );
+
                 console.error(err);
 
                 return reject(err);
 
             }
 
-            console.log("✓ imports");
+            console.log(
+                "✓ imports"
+            );
 
             resolve();
 

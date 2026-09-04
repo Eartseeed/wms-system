@@ -1699,45 +1699,85 @@ function Dashboard() {
     </div>
   </div>
 
-  {/* 5. IMPORT VALUE */}
+    {/* =================================================
+      5. IMPORT VALUE
+      ================================================= */}
+
   <div className="summary-card">
-    <div className="card-icon">💰</div>
+    <div className="card-icon">
+      💰
+    </div>
+
     <div className="card-info">
-      <span>Import Value</span>
+
+      <span>
+        Import Value
+      </span>
+
       <h2>
+
         {formatNumberDisplay(
           summary.importAmount
         )}
+
       </h2>
+
     </div>
   </div>
 
-  {/* 6. EXPORT VALUE */}
+
+  {/* =================================================
+      6. EXPORT VALUE
+      ================================================= */}
+
   <div className="summary-card">
-    <div className="card-icon">💵</div>
+    <div className="card-icon">
+      💵
+    </div>
+
     <div className="card-info">
-      <span>Export Value</span>
+
+      <span>
+        Export Value
+      </span>
+
       <h2>
+
         {formatNumberDisplay(
           summary.exportAmount
         )}
+
       </h2>
+
     </div>
   </div>
 
-  {/* 7. BALANCE VALUE */}
+
+  {/* =================================================
+      7. BALANCE VALUE
+      ================================================= */}
+
   <div className="summary-card">
-    <div className="card-icon">📈</div>
+    <div className="card-icon">
+      📈
+    </div>
+
     <div className="card-info">
-      <span>Balance Value</span>
+
+      <span>
+        Balance Value
+      </span>
+
       <h2>
+
         {formatNumberDisplay(
           summary.balanceValue
         )}
+
       </h2>
+
     </div>
   </div>
-
   {/* 8. SUPPLIERS */}
   <div className="summary-card orange">
     <div className="card-icon">🏪</div>

@@ -51,30 +51,21 @@ const {
 //
 // =====================================================
 //
-// IMPORTANT
+// DATE FILTER
 //
-// Summary Cards:
+// Total Import  → ใช้ dateFrom / dateTo
+// Total Export  → ใช้ dateFrom / dateTo
 //
-// - Current Stock
-// - Total Weight
-// - Import Value
-// - Export Value
-// - Balance Value
-//
-// จะใช้ข้อมูล Current / Total
-// ไม่ถูกลดด้วย Date Filter
-//
-// เพราะ Date Filter ใช้สำหรับดูช่วงเวลา
-// ของ Recent Import / Recent Export
+// Current Stock → ไม่ใช้ Date Filter
+// Total Weight  → ไม่ใช้ Date Filter
+// Import Value  → ไม่ใช้ Date Filter
+// Export Value  → ไม่ใช้ Date Filter
+// Balance Value → ไม่ใช้ Date Filter
+// Suppliers     → ไม่ใช้ Date Filter
+// Users         → ไม่ใช้ Date Filter
 //
 // =====================================================
 
-
-// =====================================================
-// PAGINATION SIZE
-//
-// จำนวนรายการต่อหน้า
-// =====================================================
 
 const PAGE_SIZE =
     10;
@@ -82,13 +73,6 @@ const PAGE_SIZE =
 
 // =====================================================
 // NORMALIZE DATE
-//
-// รองรับ:
-//
-// YYYY-MM-DD
-//
-// ถ้าไม่ถูกต้อง:
-// return ""
 // =====================================================
 
 function normalizeDate(
@@ -130,11 +114,6 @@ function normalizeDate(
 
 // =====================================================
 // NORMALIZE PAGE
-//
-// ?page=1
-//
-// ถ้าไม่ถูกต้อง:
-// ใช้หน้า 1
 // =====================================================
 
 function normalizePage(
@@ -168,15 +147,14 @@ function normalizePage(
 // =====================================================
 // BUILD DATE WHERE
 //
-// ใช้เฉพาะ:
-//
+// ใช้กับ:
+// - Total Import
+// - Total Export
 // - Recent Import
 // - Recent Export
 // - Import Pages
 // - Export Pages
 //
-// ไม่ใช้กับ Summary Cards
-// ที่ต้องการยอดรวมทั้งหมด
 // =====================================================
 
 function buildDateWhere(
@@ -192,10 +170,6 @@ function buildDateWhere(
         [];
 
 
-    // -------------------------------------------------
-    // DATE FROM
-    // -------------------------------------------------
-
     if (
         dateFrom
     ) {
@@ -210,10 +184,6 @@ function buildDateWhere(
 
     }
 
-
-    // -------------------------------------------------
-    // DATE TO
-    // -------------------------------------------------
 
     if (
         dateTo
@@ -248,13 +218,6 @@ function buildDateWhere(
 
 // =====================================================
 // SAFE NUMBER
-//
-// ป้องกัน:
-//
-// null
-// undefined
-// NaN
-// Infinity
 // =====================================================
 
 function number(
@@ -286,58 +249,20 @@ const DashboardController =
     {
 
 
-// =====================================================
-// GET SUMMARY
-//
-// GET:
-//
-// /api/dashboard
-// /api/dashboard/summary
-//
-// =====================================================
-//
-// SUMMARY CARD
-//
-// 1. Total Import
-// 2. Total Export
-// 3. Current Stock
-// 4. Total Weight
-// 5. Import Value
-// 6. Export Value
-// 7. Balance Value
-// 8. Suppliers
-// 9. Users
-//
-// =====================================================
-//
-// IMPORTANT
-//
-// Summary ทั้ง 9 ตัวนี้
-// ไม่ใช้ Date Filter
-//
-// เหตุผล:
-//
-// Current Stock = ยอดปัจจุบัน
-//
-// Total Weight = น้ำหนัก Stock ปัจจุบัน
-//
-// Import Value = มูลค่า Import ทั้งหมด
-//
-// Export Value = มูลค่า Export ทั้งหมด
-//
-// Balance Value = Import Value - Export Value
-//
-// ดังนั้นเมื่อ User เปลี่ยน Date
-// Summary Card จะไม่กลายเป็น 0
-// เพียงเพราะวันที่เลือกไม่มี Invoice
-//
-// Date Filter จะยังคงใช้กับ:
-//
-// - Recent Import
-// - Recent Export
-// - Pagination
-//
-// =====================================================
+        // =================================================
+        // GET SUMMARY
+        //
+        // /api/dashboard
+        // /api/dashboard/summary
+        //
+        // IMPORTANT:
+        //
+        // Total Import / Total Export
+        // จะเปลี่ยนตามวันที่เลือก
+        //
+        // ส่วน Current Stock และค่าอื่น
+        // ยังคงเป็น Current / Total
+        // =================================================
 
         getSummary:
             async (
@@ -349,16 +274,62 @@ const DashboardController =
 
 
                     // =========================================
+                    // DATE FILTER
+                    //
+                    // รับจาก Frontend:
+                    //
+                    // ?dateFrom=2026-08-01
+                    // &dateTo=2026-08-31
+                    //
+                    // =========================================
+
+                    const dateFrom =
+                        normalizeDate(
+                            req.query.dateFrom
+                        );
+
+
+                    const dateTo =
+                        normalizeDate(
+                            req.query.dateTo
+                        );
+
+
+                    // =========================================
+                    // IMPORT DATE FILTER
+                    //
+                    // Total Import ต้องแสดง
+                    // ตามวันที่เลือก
+                    //
+                    // =========================================
+
+                    const importWhere =
+                        buildDateWhere(
+                            "invoice_date",
+                            dateFrom,
+                            dateTo
+                        );
+
+
+                    // =========================================
                     // IMPORT SUMMARY
                     //
                     // ตาราง:
-                    //
                     // imports
                     //
-                    // ไม่ใช้ Date Filter
+                    // Total Import:
+                    // COUNT(*)
                     //
-                    // เพราะ Card ต้องแสดง
-                    // Import ทั้งหมด
+                    // Import Qty:
+                    // SUM(qty)
+                    //
+                    // Import Value:
+                    // SUM(total_price)
+                    //
+                    // IMPORTANT:
+                    //
+                    // Total Import ใช้ Date Filter
+                    // ตามที่ผู้ใช้เลือก
                     // =========================================
 
                     const importSummary =
@@ -379,7 +350,25 @@ const DashboardController =
                                     ) AS importAmount
 
                                 FROM imports
-                            `
+
+                                ${importWhere.sql}
+                            `,
+                            importWhere.params
+                        );
+
+
+                    // =========================================
+                    // EXPORT DATE FILTER
+                    //
+                    // Total Export ต้องแสดง
+                    // ตามวันที่เลือก
+                    // =========================================
+
+                    const exportWhere =
+                        buildDateWhere(
+                            "invoice_date",
+                            dateFrom,
+                            dateTo
                         );
 
 
@@ -387,23 +376,16 @@ const DashboardController =
                     // EXPORT SUMMARY
                     //
                     // ตาราง:
-                    //
                     // export_invoice
                     //
-                    // ไม่ใช้ Date Filter
+                    // IMPORTANT:
                     //
-                    // เพราะ Card ต้องแสดง
-                    // Export ทั้งหมด
+                    // ห้ามเปลี่ยนเป็น exports
                     //
-                    // IMPORTANT
-                    //
-                    // ห้ามเปลี่ยนกลับไปใช้:
-                    //
-                    // exports
-                    //
-                    // เพราะ Project ปัจจุบันใช้:
-                    //
+                    // Project ปัจจุบันใช้:
                     // export_invoice
+                    //
+                    // Total Export ใช้ Date Filter
                     // =========================================
 
                     const exportSummary =
@@ -424,29 +406,21 @@ const DashboardController =
                                     ) AS exportAmount
 
                                 FROM export_invoice
-                            `
+
+                                ${exportWhere.sql}
+                            `,
+                            exportWhere.params
                         );
 
 
                     // =========================================
                     // STOCK SUMMARY
                     //
-                    // ตาราง:
-                    //
-                    // stock
-                    //
-                    // Current Stock:
-                    // SUM(qty)
-                    //
-                    // Total Weight:
-                    // SUM(total_weight)
-                    //
-                    // Stock Value:
-                    // qty × unit_cost
+                    // Current Stock
                     //
                     // ไม่ใช้ Date Filter
                     //
-                    // เพราะ Stock คือ Current State
+                    // เพราะ Stock คือสถานะปัจจุบัน
                     // =========================================
 
                     const stockSummary =
@@ -520,21 +494,85 @@ const DashboardController =
 
                     // =========================================
                     // IMPORT VALUE
+                    //
+                    // IMPORTANT:
+                    //
+                    // ยังคงใช้ Import Value
+                    // จากข้อมูล Import ทั้งหมด
+                    //
+                    // ไม่ใช้ Date Filter
+                    //
+                    // ดังนั้น:
+                    //
+                    // Total Import     = ตามวันที่
+                    // Import Value     = ทั้งหมด
+                    //
                     // =========================================
 
-                    const importAmount =
-                        number(
-                            importSummary?.importAmount
+                    const importValueSummary =
+                        await get(
+                            `
+                                SELECT
+
+                                    COALESCE(
+                                        SUM(total_price),
+                                        0
+                                    ) AS importAmount
+
+                                FROM imports
+                            `
                         );
 
 
                     // =========================================
                     // EXPORT VALUE
+                    //
+                    // IMPORTANT:
+                    //
+                    // ยังคงใช้ Export Value
+                    // จากข้อมูล Export ทั้งหมด
+                    //
+                    // ไม่ใช้ Date Filter
+                    //
+                    // ดังนั้น:
+                    //
+                    // Total Export     = ตามวันที่
+                    // Export Value     = ทั้งหมด
+                    //
+                    // =========================================
+
+                    const exportValueSummary =
+                        await get(
+                            `
+                                SELECT
+
+                                    COALESCE(
+                                        SUM(total_price),
+                                        0
+                                    ) AS exportAmount
+
+                                FROM export_invoice
+                            `
+                        );
+
+
+                    // =========================================
+                    // SAFE IMPORT VALUE
+                    // =========================================
+
+                    const importAmount =
+                        number(
+                            importValueSummary?.importAmount
+                        );
+
+
+                    // =========================================
+                    // SAFE EXPORT VALUE
                     // =========================================
 
                     const exportAmount =
                         number(
-                            exportSummary?.exportAmount
+                            exportValueSummary?.exportAmount
                         );
 
 
@@ -547,6 +585,8 @@ const DashboardController =
                     // -
                     // Export Value
                     //
+                    // ใช้ยอดทั้งหมด
+                    // ไม่ใช้ Date Filter
                     // =========================================
 
                     const balanceValue =
@@ -557,21 +597,11 @@ const DashboardController =
                     // =========================================
                     // TOTAL WEIGHT
                     //
-                    // IMPORTANT
-                    //
                     // ใช้:
                     //
                     // stock.total_weight
                     //
-                    // ไม่ใช่:
-                    //
-                    // stock.qty
-                    //
-                    // เพราะ:
-                    //
-                    // qty = จำนวนสินค้า
-                    //
-                    // total_weight = น้ำหนัก
+                    // ไม่ใช่ qty
                     //
                     // =========================================
 
@@ -599,6 +629,8 @@ const DashboardController =
 
                                     // =================================
                                     // 1. TOTAL IMPORT
+                                    //
+                                    // ตามวันที่เลือก
                                     // =================================
 
                                     totalImport:
@@ -614,6 +646,8 @@ const DashboardController =
 
                                     // =================================
                                     // 2. TOTAL EXPORT
+                                    //
+                                    // ตามวันที่เลือก
                                     // =================================
 
                                     totalExport:
@@ -629,6 +663,9 @@ const DashboardController =
 
                                     // =================================
                                     // 3. CURRENT STOCK
+                                    //
+                                    // Current
+                                    // ไม่กรองวันที่
                                     // =================================
 
                                     totalStock:
@@ -649,6 +686,8 @@ const DashboardController =
 
                                     // =================================
                                     // 4. TOTAL WEIGHT
+                                    //
+                                    // Current Stock Weight
                                     // =================================
 
                                     totalWeight:
@@ -657,6 +696,8 @@ const DashboardController =
 
                                     // =================================
                                     // 5. IMPORT VALUE
+                                    //
+                                    // มูลค่า Import ทั้งหมด
                                     // =================================
 
                                     importAmount:
@@ -665,6 +706,8 @@ const DashboardController =
 
                                     // =================================
                                     // 6. EXPORT VALUE
+                                    //
+                                    // มูลค่า Export ทั้งหมด
                                     // =================================
 
                                     exportAmount:
@@ -673,6 +716,10 @@ const DashboardController =
 
                                     // =================================
                                     // 7. BALANCE VALUE
+                                    //
+                                    // Import Value
+                                    // -
+                                    // Export Value
                                     // =================================
 
                                     balanceValue:
@@ -682,8 +729,7 @@ const DashboardController =
                                     // =================================
                                     // 8. SUPPLIERS
                                     //
-                                    // ส่ง 2 ชื่อเพื่อรองรับ
-                                    // Frontend เดิม
+                                    // รองรับ Frontend เดิม
                                     // =================================
 
                                     totalSuppliers:
@@ -700,8 +746,7 @@ const DashboardController =
                                     // =================================
                                     // 9. USERS
                                     //
-                                    // ส่ง 2 ชื่อเพื่อรองรับ
-                                    // Frontend เดิม
+                                    // รองรับ Frontend เดิม
                                     // =================================
 
                                     totalUsers:
@@ -748,15 +793,9 @@ const DashboardController =
             },
 
 
-// =====================================================
-// GET RECENT IMPORT
-//
-// GET:
-//
-// /api/dashboard/recent-import
-//
-// ใช้ Date Filter
-// =====================================================
+        // =================================================
+        // GET RECENT IMPORT
+        // =================================================
 
         getRecentImport:
             async (
@@ -792,10 +831,6 @@ const DashboardController =
                         PAGE_SIZE;
 
 
-                    // -----------------------------------------
-                    // DATE FILTER
-                    // -----------------------------------------
-
                     const filter =
                         buildDateWhere(
                             "invoice_date",
@@ -803,12 +838,6 @@ const DashboardController =
                             dateTo
                         );
 
-
-                    // -----------------------------------------
-                    // QUERY IMPORT
-                    //
-                    // ใหม่ → เก่า
-                    // -----------------------------------------
 
                     const rows =
                         await all(
@@ -883,17 +912,9 @@ const DashboardController =
             },
 
 
-// =====================================================
-// GET RECENT EXPORT
-//
-// GET:
-//
-// /api/dashboard/recent-export
-//
-// ใช้ export_invoice
-//
-// ใช้ Date Filter
-// =====================================================
+        // =================================================
+        // GET RECENT EXPORT
+        // =================================================
 
         getRecentExport:
             async (
@@ -929,10 +950,6 @@ const DashboardController =
                         PAGE_SIZE;
 
 
-                    // -----------------------------------------
-                    // DATE FILTER
-                    // -----------------------------------------
-
                     const filter =
                         buildDateWhere(
                             "invoice_date",
@@ -940,12 +957,6 @@ const DashboardController =
                             dateTo
                         );
 
-
-                    // -----------------------------------------
-                    // QUERY EXPORT
-                    //
-                    // ใหม่ → เก่า
-                    // -----------------------------------------
 
                     const rows =
                         await all(
@@ -1020,15 +1031,9 @@ const DashboardController =
             },
 
 
-// =====================================================
-// GET IMPORT PAGES
-//
-// GET:
-//
-// /api/dashboard/import-pages
-//
-// ใช้ Date Filter
-// =====================================================
+        // =================================================
+        // GET IMPORT PAGES
+        // =================================================
 
         getImportPages:
             async (
@@ -1112,10 +1117,6 @@ const DashboardController =
 
                                 },
 
-                            // ---------------------------------
-                            // รองรับ Frontend เดิม
-                            // ---------------------------------
-
                             pages
 
                         });
@@ -1150,19 +1151,9 @@ const DashboardController =
             },
 
 
-// =====================================================
-// GET EXPORT PAGES
-//
-// GET:
-//
-// /api/dashboard/export-pages
-//
-// ตาราง:
-//
-// export_invoice
-//
-// ใช้ Date Filter
-// =====================================================
+        // =================================================
+        // GET EXPORT PAGES
+        // =================================================
 
         getExportPages:
             async (
@@ -1245,10 +1236,6 @@ const DashboardController =
                                         PAGE_SIZE
 
                                 },
-
-                            // ---------------------------------
-                            // รองรับ Frontend เดิม
-                            // ---------------------------------
 
                             pages
 

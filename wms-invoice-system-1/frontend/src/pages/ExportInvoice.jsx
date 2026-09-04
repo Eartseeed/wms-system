@@ -1,612 +1,754 @@
-import { API } from "../config/api";
+// =========================================================
+// CWMS - EXPORT INVOICE
+//
+// File:
+// frontend/src/pages/ExportInvoice.jsx
+//
+// IMPORTANT
+// - UI follows ImportInvoice style
+// - Export keeps existing API
+// - Import Invoice number can be searched
+// - Import Invoice data can contain multiple product rows
+// - Export can contain multiple product rows
+// - Each product row is saved through existing /exports API
+// - Stock reduction remains handled by backend ExportService
+// - No Product Master
+// - CSS is separated into ExportInvoice.css
+// =========================================================
 
 import {
-  useEffect,
-  useState,
   useCallback,
-  useRef
+  useEffect,
+  useRef,
+  useState
 } from "react";
 
+import { API } from "../config/api";
+
+// =========================================================
+// UNIT MASTER
+// =========================================================
+
+const UNIT_OPTIONS = [
+  {
+    value: "ໂຕ",
+    meaning: "ຫົວໜ່ວຍນັບສັດ"
+  },
+  {
+    value: "ກລ",
+    meaning: "ກິໂລກຣາມ"
+  },
+  {
+    value: "ລິດ",
+    meaning: "ຫົວໜ່ວຍປະລິມານຂອງແຫຼວ"
+  },
+  {
+    value: "ກິໂລໂວນ",
+    meaning: "ຫົວໜ່ວຍກຳລັງໄຟຟ້າ"
+  },
+  {
+    value: "ແມັດ",
+    meaning: "ຫົວໜ່ວຍວັດແທກຄວາມຍາວ"
+  },
+  {
+    value: "ມ3",
+    meaning: "ຫົວໜ່ວຍວັດແທກປະລິມານ"
+  },
+  {
+    value: "ມ2",
+    meaning: "ຫົວໜ່ວຍວັດແທກເນື້ອທີ່"
+  },
+  {
+    value: "ຊຸດ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນຊຸດ"
+  },
+  {
+    value: "ໂຫຼ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນໂຫຼ"
+  },
+  {
+    value: "ຄູ່",
+    meaning: "ຫົວໜ່ວຍນັບເປັນຄູ່"
+  },
+  {
+    value: "ຜືນ",
+    meaning: "ຫົວໜ່ວຍນັບແຜ່ນຜ້າ"
+  },
+  {
+    value: "ອັນ",
+    meaning: "ຫົວໜ່ວຍນັບສິ່ງຂອງ"
+  },
+  {
+    value: "ໜ່ວຍ",
+    meaning: "ຫົວໜ່ວຍນັບທົ່ວໄປ"
+  },
+  {
+    value: "ເຄື່ອງ",
+    meaning: "ຫົວໜ່ວຍນັບເຄື່ອງຈັກ"
+  },
+  {
+    value: "ກ້ອນ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນກ້ອນ"
+  },
+  {
+    value: "ຫຼອດ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນຫຼອດ"
+  },
+  {
+    value: "ຫົວ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນຫົວ"
+  },
+  {
+    value: "ຂະບວນ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນຂະບວນ"
+  },
+  {
+    value: "ຄັນ",
+    meaning: "ຫົວໜ່ວຍນັບພາຫະນະ"
+  },
+  {
+    value: "ລຳ",
+    meaning: "ຫົວໜ່ວຍນັບເຮືອ ຫຼື ຍົນ"
+  },
+  {
+    value: "ກະບອກ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນກະບອກ"
+  },
+  {
+    value: "ດ້າມ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນດ້າມ"
+  },
+  {
+    value: "ແຜ່ນ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນແຜ່ນ"
+  },
+  {
+    value: "ໃບ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນໃບ"
+  },
+  {
+    value: "ທ່ອນ",
+    meaning: "ຫົວໜ່ວຍນັບເປັນທ່ອນ"
+  }
+];
+
+// =========================================================
+// PRODUCT TYPE MASTER - same as ImportInvoice
+// =========================================================
+
+const PRODUCT_TYPE_OPTIONS = [
+  {
+    value: "4A",
+    meaning: "ກ່ອງເຫລັກ"
+  },
+  {
+    value: "4B",
+    meaning: "ກອງອາລູມີນຽມ"
+  },
+  {
+    value: "4C",
+    meaning: "ກ່ອງໄມ້"
+  },
+  {
+    value: "4D",
+    meaning: "ກ່ອງໄມ້ອັດ"
+  },
+  {
+    value: "4G",
+    meaning: "ກ່ອງໄຟເບີ໊"
+  },
+  {
+    value: "4H",
+    meaning: "ກ່ອງປາດສຕິກ"
+  },
+  {
+    value: "BC",
+    meaning: "ຫລັ່ງ"
+  },
+  {
+    value: "BG",
+    meaning: "ຖົງ"
+  },
+  {
+    value: "BK",
+    meaning: "ກະຕ່າ"
+  },
+  {
+    value: "BO",
+    meaning: "ແກ້ວ"
+  },
+  {
+    value: "BW",
+    meaning: "ກ່ອງສຳລັບຂອງແຫລວ"
+  },
+  {
+    value: "BX",
+    meaning: "ກ່ອງ"
+  },
+  {
+    value: "CS",
+    meaning: "ແກັດ"
+  },
+  {
+    value: "NE",
+    meaning: "ບໍ່ໄດ້ຫຸ້ມຫໍ່"
+  },
+  {
+    value: "QS",
+    meaning: "ກ່ອງສຳລັບຂອງແຂງ"
+  },
+  {
+    value: "RO",
+    meaning: "ກໍ້"
+  },
+  {
+    value: "SK",
+    meaning: "ເປົາ"
+  },
+  {
+    value: "TG",
+    meaning: "ຖັງສີຫລ່ຽມຍາວ"
+  },
+  {
+    value: "TK",
+    meaning: "ຖັງສີ່ຫລ່ຽມມົນທົນ"
+  },
+  {
+    value: "TY",
+    meaning: "ຖັງກົມຍາວ"
+  },
+  {
+    value: "VL",
+    meaning: "ກອງຂອງແຫລວ"
+  },
+  {
+    value: "VR",
+    meaning: "ກອງຂອງແຂງ"
+  }
+];
+
+
+// =========================================================
+// CREATE EMPTY FORM
+// =========================================================
+
+function createEmptyForm() {
+  return {
+    invoice_no: "",
+    invoice_date: "",
+    supplier: ""
+  };
+}
+
+// =========================================================
+// CREATE EMPTY ITEM
+// =========================================================
+
+function createEmptyItem() {
+  return {
+    product_code: "",
+    product_name: "",
+    product_type: "",
+    qty: "",
+    unit: "",
+    weight: "",
+    unit_weight: "",
+    total_price: "",
+    unit_price: ""
+  };
+}
+
+// =========================================================
+// NUMBER HELPERS
+// =========================================================
+
+function numberValue(value) {
+  const clean = String(value ?? "")
+    .replace(/,/g, "")
+    .trim();
+
+  if (
+    clean === "" ||
+    clean === "."
+  ) {
+    return NaN;
+  }
+
+  const number = Number(clean);
+
+  return Number.isFinite(number)
+    ? number
+    : NaN;
+}
+
+// =========================================================
+// FORMAT NUMBER INPUT
+// =========================================================
+
+function formatNumberInput(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "";
+  }
+
+  let clean = String(value)
+    .replace(/,/g, "")
+    .replace(/[^0-9.]/g, "");
+
+  const firstDot = clean.indexOf(".");
+
+  if (firstDot !== -1) {
+    clean =
+      clean.slice(
+        0,
+        firstDot + 1
+      ) +
+      clean
+        .slice(firstDot + 1)
+        .replace(/\./g, "");
+  }
+
+  if (clean === "") {
+    return "";
+  }
+
+  const parts =
+    clean.split(".");
+
+  let integerPart =
+    parts[0] || "0";
+
+  integerPart =
+    integerPart.replace(
+      /^0+(?=\d)/,
+      ""
+    );
+
+  const formattedInteger =
+    Number(
+      integerPart
+    ).toLocaleString(
+      "en-US",
+      {
+        maximumFractionDigits: 0
+      }
+    );
+
+  if (
+    firstDot !== -1
+  ) {
+    return (
+      formattedInteger +
+      "." +
+      (parts[1] || "")
+    );
+  }
+
+  return formattedInteger;
+}
+
+// =========================================================
+// FORMAT NUMBER DISPLAY
+// =========================================================
+
+function formatNumberDisplay(
+  value,
+  decimals = 2
+) {
+  const number =
+    numberValue(value);
+
+  if (
+    !Number.isFinite(number)
+  ) {
+    return "-";
+  }
+
+  return number.toLocaleString(
+    "en-US",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits:
+        decimals
+    }
+  );
+}
+
+// =========================================================
+// CALCULATE UNIT WEIGHT
+// =========================================================
+
+function calculateUnitWeight(
+  qty,
+  weight
+) {
+  const q =
+    numberValue(qty);
+
+  const totalWeight =
+    numberValue(weight);
+
+  if (
+    !Number.isFinite(q) ||
+    q <= 0
+  ) {
+    return "";
+  }
+
+  if (
+    !Number.isFinite(
+      totalWeight
+    ) ||
+    totalWeight < 0
+  ) {
+    return "";
+  }
+
+  return (
+    totalWeight / q
+  ).toFixed(4);
+}
+
+// =========================================================
+// CALCULATE UNIT PRICE
+// =========================================================
+
+function calculateUnitPrice(
+  qty,
+  totalPrice
+) {
+  const q =
+    numberValue(qty);
+
+  const total =
+    numberValue(totalPrice);
+
+  if (
+    !Number.isFinite(q) ||
+    q <= 0
+  ) {
+    return "";
+  }
+
+  if (
+    !Number.isFinite(total) ||
+    total < 0
+  ) {
+    return "";
+  }
+
+  return (
+    total / q
+  ).toFixed(2);
+}
+
+// =========================================================
+// COMPONENT
+// =========================================================
 
 function ExportInvoice() {
 
   const token =
-    localStorage.getItem("token");
+    localStorage.getItem(
+      "token"
+    );
 
-
-  // =====================================================
-  // UNIT MASTER DATA
-  // =====================================================
-
-  const UNIT_OPTIONS = [
-
-    {
-      value: "ໂຕ",
-      meaning: "ຫົວໜ່ວຍນັບສັດ"
-    },
-
-    {
-      value: "ກລ",
-      meaning: "ກິໂລກຣາມ"
-    },
-
-    {
-      value: "ລິດ",
-      meaning: "ຫົວໜ່ວຍປະລິມານຂອງແຫຼວ"
-    },
-
-    {
-      value: "ກິໂລໂວນ",
-      meaning: "ຫົວໜ່ວຍກຳລັງໄຟຟ້າ"
-    },
-
-    {
-      value: "ແມັດ",
-      meaning: "ຫົວໜ່ວຍວັດແທກຄວາມຍາວ"
-    },
-
-    {
-      value: "ມ3",
-      meaning: "ຫົວໜ່ວຍວັດແທກປະລິມານ"
-    },
-
-    {
-      value: "ມ2",
-      meaning: "ຫົວໜ່ວຍວັດແທກເນື້ອທີ່"
-    },
-
-    {
-      value: "ຊຸດ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນຊຸດ"
-    },
-
-    {
-      value: "ໂຫຼ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນໂຫຼ"
-    },
-
-    {
-      value: "ຄູ່",
-      meaning: "ຫົວໜ່ວຍນັບເປັນຄູ່"
-    },
-
-    {
-      value: "ຜືນ",
-      meaning: "ຫົວໜ່ວຍນັບແຜ່ນຜ້າ"
-    },
-
-    {
-      value: "ອັນ",
-      meaning: "ຫົວໜ່ວຍນັບສິ່ງຂອງ"
-    },
-
-    {
-      value: "ໜ່ວຍ",
-      meaning: "ຫົວໜ່ວຍນັບທົ່ວໄປ"
-    },
-
-    {
-      value: "ເຄື່ອງ",
-      meaning: "ຫົວໜ່ວຍນັບເຄື່ອງຈັກ"
-    },
-
-    {
-      value: "ກ້ອນ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນກ້ອນ"
-    },
-
-    {
-      value: "ຫຼອດ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນຫຼອດ"
-    },
-
-    {
-      value: "ຫົວ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນຫົວ"
-    },
-
-    {
-      value: "ຂະບວນ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນຂະບວນ"
-    },
-
-    {
-      value: "ຄັນ",
-      meaning: "ຫົວໜ່ວຍນັບພາຫະນະ"
-    },
-
-    {
-      value: "ລຳ",
-      meaning: "ຫົວໜ່ວຍນັບເຮືອ ຫຼື ຍົນ"
-    },
-
-    {
-      value: "ກະບອກ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນກະບອກ"
-    },
-
-    {
-      value: "ດ້າມ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນດ້າມ"
-    },
-
-    {
-      value: "ແຜ່ນ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນແຜ່ນ"
-    },
-
-    {
-      value: "ໃບ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນໃບ"
-    },
-
-    {
-      value: "ທ່ອນ",
-      meaning: "ຫົວໜ່ວຍນັບເປັນທ່ອນ"
-    }
-
-  ];
-
-
-  // =====================================================
+  // =======================================================
   // REF
-  // =====================================================
+  // =======================================================
 
-  const unitRef =
+  const pageRef =
     useRef(null);
 
-  const supplierRef =
+  const invoiceDateInputRef =
     useRef(null);
 
-
-  // =====================================================
+  // =======================================================
   // STATE
-  // =====================================================
+  // =======================================================
 
   const [list, setList] =
+    useState([]);
+
+  const [suppliers, setSuppliers] =
     useState([]);
 
   const [search, setSearch] =
     useState("");
 
+  const [invoiceSearch, setInvoiceSearch] =
+    useState("");
+
   const [editId, setEditId] =
     useState(null);
 
-  const [docType, setDocType] =
-    useState("invoice_file");
+  const [
+    showSupplierSuggestions,
+    setShowSupplierSuggestions
+  ] = useState(false);
+
+  const [activeUnitRow, setActiveUnitRow] =
+    useState(null);
+
+  const [activeProductTypeRow, setActiveProductTypeRow] =
+    useState(null);
+
+  const [form, setForm] =
+    useState(
+      createEmptyForm()
+    );
+
+  const [items, setItems] =
+    useState([
+      createEmptyItem()
+    ]);
 
   const [files, setFiles] =
     useState({});
 
-  const [oldFiles, setOldFiles] =
+  const [, setOldFiles] =
     useState({});
 
-  const [suppliers, setSuppliers] =
-    useState([]);
+  const [, setDocType] =
+    useState("invoice_file");
 
-  const [
-    showSupplierList,
-    setShowSupplierList
-  ] = useState(false);
+  // =======================================================
+  // CLOSE DROPDOWNS
+  // =======================================================
 
-  const [
-    showUnitList,
-    setShowUnitList
-  ] = useState(false);
+  const closeAllDropdowns =
+    useCallback(() => {
 
-  const [
-    invoiceSearch,
-    setInvoiceSearch
-  ] = useState("");
-
-
-  // =====================================================
-  // FORM
-  // =====================================================
-
-  const [form, setForm] =
-    useState({
-
-      invoice_no: "",
-
-      product_code: "",
-
-      product_name: "",
-
-      qty: "",
-
-      unit: "",
-
-      unit_weight: "",
-
-      weight: "",
-
-      unit_price: "",
-
-      total_price: "",
-
-      supplier: "",
-
-      invoice_date: ""
-
-    });
-
-
-  // =====================================================
-  // NUMBER FORMAT
-  // =====================================================
-
-  const removeComma =
-    (value) => {
-
-      return String(
-        value ?? ""
-      )
-        .replace(
-          /,/g,
-          ""
-        )
-        .trim();
-
-    };
-
-
-  const numberValue =
-    (value) => {
-
-      const clean =
-        removeComma(value);
-
-      if (
-        clean === "" ||
-        clean === "."
-      ) {
-
-        return NaN;
-
-      }
-
-      return Number(clean);
-
-    };
-
-
-  const formatNumberInput =
-    (value) => {
-
-      if (
-        value === null ||
-        value === undefined ||
-        value === ""
-      ) {
-
-        return "";
-
-      }
-
-
-      let clean =
-        String(value)
-          .replace(
-            /,/g,
-            ""
-          )
-          .replace(
-            /[^0-9.]/g,
-            ""
-          );
-
-
-      const firstDot =
-        clean.indexOf(".");
-
-
-      if (
-        firstDot !== -1
-      ) {
-
-        clean =
-          clean.slice(
-            0,
-            firstDot + 1
-          ) +
-          clean
-            .slice(
-              firstDot + 1
-            )
-            .replace(
-              /\./g,
-              ""
-            );
-
-      }
-
-
-      if (
-        clean === ""
-      ) {
-
-        return "";
-
-      }
-
-
-      if (
-        clean === "."
-      ) {
-
-        return "";
-
-      }
-
-
-      const parts =
-        clean.split(".");
-
-
-      let integerPart =
-        parts[0] || "0";
-
-
-      integerPart =
-        integerPart.replace(
-          /^0+(?=\d)/,
-          ""
-        );
-
-
-      const formattedInteger =
-        Number(
-          integerPart
-        )
-          .toLocaleString(
-            "en-US",
-            {
-              maximumFractionDigits:
-                0
-            }
-          );
-
-
-      if (
-        firstDot !== -1
-      ) {
-
-        return (
-          formattedInteger +
-          "." +
-          (parts[1] || "")
-        );
-
-      }
-
-
-      return formattedInteger;
-
-    };
-
-
-  const formatNumberDisplay =
-    (value, maxDecimal = 2) => {
-
-      const num =
-        numberValue(value);
-
-
-      if (
-        !Number.isFinite(num)
-      ) {
-
-        return "-";
-
-      }
-
-
-      return num.toLocaleString(
-        "en-US",
-        {
-          minimumFractionDigits:
-            0,
-
-          maximumFractionDigits:
-            maxDecimal
-        }
+      setShowSupplierSuggestions(
+        false
       );
 
-    };
+      setActiveUnitRow(
+        null
+      );
 
+    }, []);
 
-  // =====================================================
-  // CLOSE DROPDOWN WHEN CLICK OUTSIDE
-  // =====================================================
+  // =======================================================
+  // DATE PICKER
+  // =======================================================
+
+  const openInvoiceDatePicker =
+    useCallback(() => {
+
+      const input =
+        invoiceDateInputRef.current;
+
+      if (!input) {
+        return;
+      }
+
+      closeAllDropdowns();
+
+      if (
+        typeof input.showPicker ===
+        "function"
+      ) {
+
+        try {
+
+          input.showPicker();
+
+          return;
+
+        } catch {
+          // Browser may reject showPicker.
+        }
+
+      }
+
+      input.focus();
+
+    }, [
+      closeAllDropdowns
+    ]);
+
+  // =======================================================
+  // CLICK OUTSIDE
+  // =======================================================
 
   useEffect(() => {
 
-    const handleClickOutside =
+    const handlePointerDown =
       (event) => {
 
+        const root =
+          pageRef.current;
+
         if (
-          unitRef.current &&
-          !unitRef.current.contains(
+          !root ||
+          root.contains(
             event.target
           )
         ) {
-
-          setShowUnitList(
-            false
-          );
-
+          return;
         }
 
-
-        if (
-          supplierRef.current &&
-          !supplierRef.current.contains(
-            event.target
-          )
-        ) {
-
-          setShowSupplierList(
-            false
-          );
-
-        }
+        closeAllDropdowns();
 
       };
 
-
     document.addEventListener(
       "mousedown",
-      handleClickOutside
+      handlePointerDown
     );
 
+    document.addEventListener(
+      "touchstart",
+      handlePointerDown
+    );
 
     return () => {
 
       document.removeEventListener(
         "mousedown",
-        handleClickOutside
+        handlePointerDown
+      );
+
+      document.removeEventListener(
+        "touchstart",
+        handlePointerDown
       );
 
     };
 
-  }, []);
+  }, [
+    closeAllDropdowns
+  ]);
 
-
-  // =====================================================
-  // LOAD EXPORT
-  // =====================================================
+  // =======================================================
+  // LOAD EXPORT DATA
+  // =======================================================
 
   const loadData =
-    useCallback(async () => {
+    useCallback(
+      async () => {
 
-      try {
+        try {
 
-        const res =
-          await fetch(
-            `${API}/exports`,
-            {
-              method:
-                "GET",
-
-              headers: {
-                Authorization:
-                  `Bearer ${token}`
+          const res =
+            await fetch(
+              `${API}/exports`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`
+                }
               }
-            }
+            );
+
+          const result =
+            await res.json();
+
+          if (
+            !res.ok ||
+            !result.success
+          ) {
+
+            setList([]);
+
+            return;
+
+          }
+
+          setList(
+            Array.isArray(
+              result.data
+            )
+              ? result.data
+              : []
           );
 
+        } catch (error) {
 
-        const result =
-          await res.json();
-
-
-        if (
-          !res.ok ||
-          !result.success
-        ) {
+          console.error(
+            "Load export error:",
+            error
+          );
 
           setList([]);
 
-          return;
-
         }
 
+      },
+      [token]
+    );
 
-        setList(
-          Array.isArray(
-            result.data
-          )
-            ? result.data
-            : []
-        );
-
-
-      } catch (err) {
-
-        console.error(
-          "Load export error:",
-          err
-        );
-
-        setList([]);
-
-      }
-
-    }, [token]);
-
-
-  // =====================================================
+  // =======================================================
   // LOAD SUPPLIERS
-  // =====================================================
+  // =======================================================
 
   const loadSuppliers =
-    useCallback(async () => {
+    useCallback(
+      async () => {
 
-      try {
+        try {
 
-        const res =
-          await fetch(
-            `${API}/suppliers`,
-            {
-              method:
-                "GET",
-
-              headers: {
-                Authorization:
-                  `Bearer ${token}`
+          const res =
+            await fetch(
+              `${API}/suppliers`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`
+                }
               }
-            }
+            );
+
+          const result =
+            await res.json();
+
+          if (
+            !res.ok ||
+            !result.success
+          ) {
+
+            setSuppliers([]);
+
+            return;
+
+          }
+
+          setSuppliers(
+            Array.isArray(
+              result.data
+            )
+              ? result.data
+              : []
           );
 
+        } catch (error) {
 
-        const result =
-          await res.json();
-
-
-        if (
-          !res.ok ||
-          !result.success
-        ) {
+          console.error(
+            "Load suppliers error:",
+            error
+          );
 
           setSuppliers([]);
 
-          return;
-
         }
 
+      },
+      [token]
+    );
 
-        setSuppliers(
-          Array.isArray(
-            result.data
-          )
-            ? result.data
-            : []
-        );
-
-
-      } catch (err) {
-
-        console.error(
-          "Load suppliers error:",
-          err
-        );
-
-        setSuppliers([]);
-
-      }
-
-    }, [token]);
-
-
-  // =====================================================
+  // =======================================================
   // INITIAL LOAD
-  // =====================================================
+  // =======================================================
 
   useEffect(() => {
 
     loadData();
-
     loadSuppliers();
 
   }, [
@@ -614,805 +756,329 @@ function ExportInvoice() {
     loadSuppliers
   ]);
 
-
-  // =====================================================
-  // CALCULATE UNIT PRICE
-  // =====================================================
-
-  const calculateUnitPrice =
-    (
-      qty,
-      totalPrice
-    ) => {
-
-      const q =
-        numberValue(qty);
-
-      const total =
-        numberValue(totalPrice);
-
-
-      if (
-        !Number.isFinite(q) ||
-        q <= 0
-      ) {
-
-        return "";
-
-      }
-
-
-      if (
-        !Number.isFinite(total) ||
-        total < 0
-      ) {
-
-        return "";
-
-      }
-
-
-      return (
-        total / q
-      ).toFixed(2);
-
-    };
-
-
-  // =====================================================
-  // CHANGE QTY
-  // =====================================================
-
-  const handleQtyChange =
-    (value) => {
-
-      const formatted =
-        formatNumberInput(value);
-
-
-      setForm(
-        (prev) => {
-
-          const unitPrice =
-            calculateUnitPrice(
-              formatted,
-              prev.total_price
-            );
-
-
-          return {
-
-            ...prev,
-
-            qty:
-              formatted,
-
-            unit_price:
-              unitPrice
-                ? formatNumberInput(
-                    unitPrice
-                  )
-                : ""
-
-          };
-
-        }
-      );
-
-    };
-
-
-  // =====================================================
-  // CHANGE TOTAL PRICE
-  // =====================================================
-
-  const handleTotalPriceChange =
-    (value) => {
-
-      const formatted =
-        formatNumberInput(value);
-
-
-      setForm(
-        (prev) => {
-
-          const unitPrice =
-            calculateUnitPrice(
-              prev.qty,
-              formatted
-            );
-
-
-          return {
-
-            ...prev,
-
-            total_price:
-              formatted,
-
-            unit_price:
-              unitPrice
-                ? formatNumberInput(
-                    unitPrice
-                  )
-                : ""
-
-          };
-
-        }
-      );
-
-    };
-
-
-  // =====================================================
-  // UNIT SEARCH
-  // =====================================================
-
-  const unitKeyword =
-    String(
-      form.unit || ""
-    )
-      .trim()
-      .toLowerCase();
-
-
-  const filteredUnits =
-    UNIT_OPTIONS
-      .filter(
-        (item) => {
-
-          if (!unitKeyword) {
-
-            return true;
-
-          }
-
-
-          return (
-
-            item.value
-              .toLowerCase()
-              .includes(
-                unitKeyword
-              )
-
-            ||
-
-            item.meaning
-              .toLowerCase()
-              .includes(
-                unitKeyword
-              )
-
-          );
-
-        }
-      )
-      .slice(0, 5);
-
-
-  // =====================================================
-  // SELECT UNIT
-  // =====================================================
-
-  const selectUnit =
-    (unit) => {
-
-      setForm(
-        (prev) => ({
-
-          ...prev,
-
-          unit:
-            unit.value
-
-        })
-      );
-
-
-      setShowUnitList(
-        false
-      );
-
-    };
-
-
-  // =====================================================
-  // RESET FORM
-  // =====================================================
+  // =======================================================
+  // RESET
+  // =======================================================
 
   const resetForm =
     () => {
 
-      setEditId(
-        null
+      setEditId(null);
+
+      setForm(
+        createEmptyForm()
       );
 
-      setFiles(
-        {}
-      );
+      setItems([
+        createEmptyItem()
+      ]);
 
-      setOldFiles(
-        {}
-      );
+      setFiles({});
+
+      setOldFiles({});
 
       setDocType(
         "invoice_file"
       );
 
-      setInvoiceSearch(
-        ""
-      );
+      setInvoiceSearch("");
 
-      setShowSupplierList(
-        false
-      );
-
-      setShowUnitList(
-        false
-      );
-
-
-      setForm({
-
-        invoice_no: "",
-
-        product_code: "",
-
-        product_name: "",
-
-        qty: "",
-
-        unit: "",
-
-        unit_weight: "",
-
-        weight: "",
-
-        unit_price: "",
-
-        total_price: "",
-
-        supplier: "",
-
-        invoice_date: ""
-
-      });
+      closeAllDropdowns();
 
     };
 
-
-  // =====================================================
-  // SAVE
-  // =====================================================
-
-  const saveData =
-    async () => {
-
-      try {
-
-        if (
-          !/^\d+$/.test(
-            String(
-              form.product_code || ""
-            ).trim()
-          )
-        ) {
-
-          alert(
-            "Product Number ຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ"
-          );
-
-          return;
-
-        }
-
-
-        if (
-          !String(
-            form.product_name || ""
-          ).trim()
-        ) {
-
-          alert(
-            "ກະລຸນາໃສ່ຊື່ສິນຄ້າ"
-          );
-
-          return;
-
-        }
-
-
-        const qty =
-          numberValue(
-            form.qty
-          );
-
-
-        if (
-          !Number.isFinite(
-            qty
-          ) ||
-          qty <= 0
-        ) {
-
-          alert(
-            "ກະລຸນາໃສ່ຈຳນວນສິນຄ້າ"
-          );
-
-          return;
-
-        }
-
-
-        const totalPrice =
-          numberValue(
-            form.total_price
-          );
-
-
-        if (
-          !Number.isFinite(
-            totalPrice
-          ) ||
-          totalPrice < 0
-        ) {
-
-          alert(
-            "ກະລຸນາໃສ່ລາຄາລວມ"
-          );
-
-          return;
-
-        }
-
-
-        const unitWeight =
-          numberValue(
-            form.unit_weight
-          );
-
-
-        const weight =
-          numberValue(
-            form.weight
-          );
-
-
-        const unitPrice =
-          calculateUnitPrice(
-            qty,
-            totalPrice
-          );
-
-
-        if (
-          unitPrice === ""
-        ) {
-
-          alert(
-            "ບໍ່ສາມາດຄຳນວນລາຄາຕໍ່ໜ່ວຍໄດ້"
-          );
-
-          return;
-
-        }
-
-
-        const formData =
-          new FormData();
-
-
-        formData.append(
-          "invoice_no",
-          form.invoice_no ?? ""
-        );
-
-
-        formData.append(
-          "product_code",
-          form.product_code ?? ""
-        );
-
-
-        formData.append(
-          "product_name",
-          form.product_name ?? ""
-        );
-
-
-        formData.append(
-          "qty",
-          qty
-        );
-
-
-        formData.append(
-          "unit",
-          form.unit ?? ""
-        );
-
-
-        formData.append(
-          "unit_weight",
-          Number.isFinite(unitWeight)
-            ? unitWeight
-            : ""
-        );
-
-
-        formData.append(
-          "weight",
-          Number.isFinite(weight)
-            ? weight
-            : ""
-        );
-
-
-        formData.append(
-          "unit_price",
-          numberValue(unitPrice)
-        );
-
-
-        formData.append(
-          "total_price",
-          totalPrice
-        );
-
-
-        formData.append(
-          "supplier",
-          form.supplier ?? ""
-        );
-
-
-        formData.append(
-          "invoice_date",
-          form.invoice_date ?? ""
-        );
-
-
-        Object.entries(
-          files
-        ).forEach(
-          ([key, file]) => {
-
-            if (
-              file
-            ) {
-
-              formData.append(
-                key,
-                file
-              );
-
-            }
-
-          }
-        );
-
-
-        let url =
-          `${API}/exports`;
-
-        let method =
-          "POST";
-
-
-        if (
-          editId
-        ) {
-
-          url =
-            `${API}/exports/${editId}`;
-
-          method =
-            "PUT";
-
-        }
-
-
-        const res =
-          await fetch(
-            url,
-            {
-              method,
-
-              headers: {
-                Authorization:
-                  `Bearer ${token}`
-              },
-
-              body:
-                formData
-            }
-          );
-
-
-        const result =
-          await res.json();
-
-
-        if (
-          !res.ok ||
-          !result.success
-        ) {
-
-          throw new Error(
-            result.message ||
-            "Save failed"
-          );
-
-        }
-
-
-        alert(
-          editId
-            ? "ແກ້ໄຂສຳເລັດ"
-            : "ບັນທຶກສຳເລັດ"
-        );
-
-
-        resetForm();
-
-        await loadData();
-
-
-      } catch (err) {
-
-        console.error(
-          "Export save error:",
-          err
-        );
-
-
-        alert(
-          "ບັນທຶກບໍ່ສຳເລັດ: " +
-          err.message
-        );
-
+  // =======================================================
+  // FIND REGISTERED SUPPLIER
+  // =======================================================
+
+  const findRegisteredSupplier =
+    (value) => {
+
+      const keyword =
+        String(
+          value || ""
+        )
+          .trim()
+          .toLowerCase();
+
+      if (!keyword) {
+        return null;
       }
 
+      return (
+        suppliers.find(
+          (item) =>
+            String(
+              item.supplier_name ||
+              ""
+            )
+              .trim()
+              .toLowerCase() ===
+            keyword
+        ) || null
+      );
+
+    };
+
+  // =======================================================
+  // SELECT SUPPLIER
+  // =======================================================
+
+  const selectSupplier =
+    (supplier) => {
+
+      const name =
+        String(
+          supplier.supplier_name ||
+          ""
+        ).trim();
+
+      setForm(
+        (previous) => ({
+          ...previous,
+          supplier: name
+        })
+      );
+
+      closeAllDropdowns();
+
+    };
+
+  // =======================================================
+  // UPDATE ITEM
+  // =======================================================
+
+  const updateItem =
+    (
+      index,
+      field,
+      value
+    ) => {
+
+      setItems(
+        (previous) => {
+
+          const next =
+            [...previous];
+
+          const item =
+            {
+              ...next[index]
+            };
+
+          if (
+            field === "qty"
+          ) {
+
+            item.qty =
+              formatNumberInput(
+                value
+              );
+
+            item.unit_weight =
+              calculateUnitWeight(
+                item.qty,
+                item.weight
+              );
+
+            item.unit_price =
+              calculateUnitPrice(
+                item.qty,
+                item.total_price
+              );
+
+          } else if (
+            field === "weight"
+          ) {
+
+            item.weight =
+              formatNumberInput(
+                value
+              );
+
+            item.unit_weight =
+              calculateUnitWeight(
+                item.qty,
+                item.weight
+              );
+
+          } else if (
+            field === "total_price"
+          ) {
+
+            item.total_price =
+              formatNumberInput(
+                value
+              );
+
+            item.unit_price =
+              calculateUnitPrice(
+                item.qty,
+                item.total_price
+              );
+
+          } else {
+
+            item[field] =
+              value;
+
+          }
+
+          next[index] =
+            item;
+
+          return next;
+
+        }
+      );
+
+    };
+
+  // =======================================================
+  // ADD ITEM
+  // =======================================================
+
+  const addItem =
+    () => {
+
+      closeAllDropdowns();
+
+      setItems(
+        (previous) => [
+          ...previous,
+          createEmptyItem()
+        ]
+      );
+
+    };
+
+  // =======================================================
+  // REMOVE ITEM
+  // =======================================================
+
+  const removeItem =
+    (index) => {
+
+      closeAllDropdowns();
+
+      setItems(
+        (previous) => {
+
+          if (
+            previous.length <= 1
+          ) {
+
+            return [
+              createEmptyItem()
+            ];
+
+          }
+
+          return previous.filter(
+            (
+              _,
+              itemIndex
+            ) =>
+              itemIndex !==
+              index
+          );
+
+        }
+      );
+
+    };
+
+  // =======================================================
+  // SELECT UNIT
+  // =======================================================
+
+  const selectUnit =
+    (
+      rowIndex,
+      unit
+    ) => {
+
+      updateItem(
+        rowIndex,
+        "unit",
+        unit.value
+      );
+
+      closeAllDropdowns();
+
+    };
+
+  // =======================================================
+  // SELECT PRODUCT TYPE
+  // Same behavior as ImportInvoice
+  // =======================================================
+
+  const selectProductType =
+    (
+      rowIndex,
+      productType
+    ) => {
+
+      updateItem(
+        rowIndex,
+        "product_type",
+        productType.value
+      );
+
+      closeAllDropdowns();
+
     };
 
 
-  // =====================================================
-  // DELETE
-  // =====================================================
+  // =======================================================
+  // LOAD IMPORT INVOICE
+  //
+  // IMPORTANT
+  //
+  // Keep existing function:
+  //
+  // GET /imports/invoice/:invoiceNo
+  //
+  // Current backend may return:
+  //
+  // [
+  //   {...},
+  //   {...}
+  // ]
+  //
+  // Therefore all Import rows are
+  // converted into Export item rows.
+  // =======================================================
 
-  const deleteData =
-    async (id) => {
+  const loadInvoice =
+    async () => {
 
-      if (
-        !window.confirm(
-          "ຢືນຢັນການລົບ ?"
-        )
-      ) {
+      const invoiceNo =
+        String(
+          invoiceSearch || ""
+        ).trim();
+
+      if (!invoiceNo) {
+
+        alert(
+          "ກະລຸນາໃສ່ເລກ Invoice"
+        );
 
         return;
 
       }
 
-
       try {
 
-        const res =
-          await fetch(
-            `${API}/exports/${id}`,
-            {
-              method:
-                "DELETE",
-
-              headers: {
-                Authorization:
-                  `Bearer ${token}`
-              }
-            }
-          );
-
-
-        const result =
-          await res.json();
-
-
-        if (
-          !res.ok ||
-          !result.success
-        ) {
-
-          throw new Error(
-            result.message ||
-            "Delete failed"
-          );
-
-        }
-
-
-        if (
-          String(editId) ===
-          String(id)
-        ) {
-
-          resetForm();
-
-        }
-
-
-        await loadData();
-
-
-      } catch (err) {
-
-        console.error(
-          "Delete export error:",
-          err
-        );
-
-
-        alert(
-          "ລົບບໍ່ສຳເລັດ: " +
-          err.message
-        );
-
-      }
-
-    };
-
-
-  // =====================================================
-  // EDIT
-  // =====================================================
-
-  const editData =
-    (item) => {
-
-      setEditId(
-        item.id
-      );
-
-
-      const unitPrice =
-        calculateUnitPrice(
-          item.qty,
-          item.total_price
-        );
-
-
-      setForm({
-
-        invoice_no:
-          item.invoice_no || "",
-
-        product_code:
-          item.product_code || "",
-
-        product_name:
-          item.product_name || "",
-
-        qty:
-          item.qty !== null && item.qty !== undefined
-            ? formatNumberInput(item.qty)
-            : "",
-
-        unit:
-          item.unit || "",
-
-        unit_weight:
-          item.unit_weight !== null && item.unit_weight !== undefined
-            ? formatNumberInput(item.unit_weight)
-            : "",
-
-        weight:
-          item.weight !== null && item.weight !== undefined
-            ? formatNumberInput(item.weight)
-            : "",
-
-        unit_price:
-          unitPrice
-            ? formatNumberInput(unitPrice)
-            : "",
-
-        total_price:
-          item.total_price !== null && item.total_price !== undefined
-            ? formatNumberInput(item.total_price)
-            : "",
-
-        supplier:
-          item.supplier || "",
-
-        invoice_date:
-          item.invoice_date || ""
-
-      });
-
-
-      setOldFiles({
-
-        invoice_file:
-          item.invoice_file || "",
-
-        payment_file:
-          item.payment_file || "",
-
-        formd_file:
-          item.formd_file || "",
-
-        phytos_file:
-          item.phytos_file || "",
-
-        tax_file:
-          item.tax_file || "",
-
-        export_license_file:
-          item.export_license_file || "",
-
-        origin_file:
-          item.origin_file || "",
-
-        acdd_file:
-          item.acdd_file || ""
-
-      });
-
-
-      setFiles(
-        {}
-      );
-
-      setShowSupplierList(
-        false
-      );
-
-      setShowUnitList(
-        false
-      );
-
-
-      window.scrollTo({
-
-        top: 0,
-
-        behavior:
-          "smooth"
-
-      });
-
-    };
-
-
-  // =====================================================
-  // LOAD IMPORT INVOICE
-  // =====================================================
-
-  const loadInvoice =
-    async () => {
-
-      try {
-
-        if (
-          !invoiceSearch.trim()
-        ) {
-
-          alert(
-            "ກະລຸນາໃສ່ Invoice"
-          );
-
-          return;
-
-        }
-
+        closeAllDropdowns();
 
         const res =
           await fetch(
             `${API}/imports/invoice/${encodeURIComponent(
-              invoiceSearch.trim()
+              invoiceNo
             )}`,
             {
-              method:
-                "GET",
-
+              method: "GET",
               headers: {
                 Authorization:
                   `Bearer ${token}`
@@ -1420,10 +1086,8 @@ function ExportInvoice() {
             }
           );
 
-
         const result =
           await res.json();
-
 
         if (
           !res.ok ||
@@ -1439,120 +1103,775 @@ function ExportInvoice() {
 
         }
 
+        const rows =
+          Array.isArray(
+            result.data
+          )
+            ? result.data
+            : result.data
+              ? [result.data]
+              : [];
 
-        const data =
-          result.data;
+        if (
+          rows.length === 0
+        ) {
 
+          alert(
+            "ບໍ່ພົບ Invoice"
+          );
 
-        const qty =
-          data.qty !== null && data.qty !== undefined
-            ? formatNumberInput(data.qty)
-            : "";
+          return;
 
-        const totalPrice =
-          data.total_price !== null && data.total_price !== undefined
-            ? formatNumberInput(data.total_price)
-            : "";
+        }
 
+        const first =
+          rows[0];
 
         setForm({
-
           invoice_no:
-            data.invoice_no || "",
-
-          product_code:
-            data.product_code || "",
-
-          product_name:
-            data.product_name || "",
-
-          qty,
-
-          unit:
-            data.unit || "",
-
-          unit_weight:
-            data.unit_weight !== null && data.unit_weight !== undefined
-              ? formatNumberInput(data.unit_weight)
-              : "",
-
-          weight:
-            data.weight !== null && data.weight !== undefined
-              ? formatNumberInput(data.weight)
-              : "",
-
-          unit_price:
-            calculateUnitPrice(
-              qty,
-              totalPrice
-            ),
-
-          total_price:
-            totalPrice,
-
-          supplier:
-            data.supplier || "",
+            first.invoice_no ||
+            invoiceNo,
 
           invoice_date:
-            data.invoice_date || ""
+            first.invoice_date ||
+            "",
 
+          supplier:
+            first.supplier ||
+            ""
         });
 
+        setItems(
+          rows.map(
+            (data) => {
 
-        setEditId(
-          null
+              const qty =
+                data.qty !== null &&
+                data.qty !== undefined
+                  ? formatNumberInput(
+                      data.qty
+                    )
+                  : "";
+
+              const weight =
+                data.weight !== null &&
+                data.weight !== undefined
+                  ? formatNumberInput(
+                      data.weight
+                    )
+                  : "";
+
+              const totalPrice =
+                data.total_price !== null &&
+                data.total_price !== undefined
+                  ? formatNumberInput(
+                      data.total_price
+                    )
+                  : "";
+
+              return {
+
+                product_code:
+                  data.product_code ||
+                  "",
+
+                product_name:
+                  data.product_name ||
+                  "",
+
+                product_type:
+                  data.product_type ||
+                  "",
+
+                qty,
+
+                unit:
+                  data.unit ||
+                  "",
+
+                weight,
+
+                unit_weight:
+                  calculateUnitWeight(
+                    qty,
+                    weight
+                  ),
+
+                total_price:
+                  totalPrice,
+
+                unit_price:
+                  calculateUnitPrice(
+                    qty,
+                    totalPrice
+                  )
+
+              };
+
+            }
+          )
         );
 
-        setFiles(
-          {}
+        setEditId(null);
+
+        setFiles({});
+
+        setOldFiles({});
+
+        setDocType(
+          "invoice_file"
         );
 
-        setOldFiles(
-          {}
-        );
-
-        setShowSupplierList(
-          false
-        );
-
-        setShowUnitList(
-          false
-        );
-
-
-      } catch (err) {
+      } catch (error) {
 
         console.error(
           "Load import invoice error:",
-          err
+          error
         );
-
 
         alert(
           "ບໍ່ສາມາດດຶງ Invoice ໄດ້: " +
-          err.message
+          error.message
         );
 
       }
 
     };
 
+  // =======================================================
+  // SAVE
+  // =======================================================
 
-  // =====================================================
-  // FILTER
-  // =====================================================
+  const saveData =
+    async () => {
+
+      try {
+
+        closeAllDropdowns();
+
+        const invoiceNo =
+          String(
+            form.invoice_no ||
+            ""
+          ).trim();
+
+        const invoiceDate =
+          String(
+            form.invoice_date ||
+            ""
+          ).trim();
+
+        const supplierName =
+          String(
+            form.supplier ||
+            ""
+          ).trim();
+
+        if (!invoiceNo) {
+
+          alert(
+            "ກະລຸນາໃສ່ເລກ Invoice"
+          );
+
+          return;
+
+        }
+
+        if (!invoiceDate) {
+
+          alert(
+            "ກະລຸນາເລືອກວັນທີ Invoice"
+          );
+
+          return;
+
+        }
+
+        const registeredSupplier =
+          findRegisteredSupplier(
+            supplierName
+          );
+
+        if (
+          !registeredSupplier
+        ) {
+
+          alert(
+            "Supplier ຕ້ອງເລືອກຈາກ Supplier ທີ່ລົງທະບຽນໄວ້"
+          );
+
+          return;
+
+        }
+
+        if (
+          !Array.isArray(
+            items
+          ) ||
+          items.length === 0
+        ) {
+
+          alert(
+            "ກະລຸນາເພີ່ມລາຍການສິນຄ້າ"
+          );
+
+          return;
+
+        }
+
+        // -------------------------------------------------
+        // VALIDATE ALL ITEMS FIRST
+        // -------------------------------------------------
+
+        for (
+          let index = 0;
+          index < items.length;
+          index++
+        ) {
+
+          const item =
+            items[index];
+
+          const rowNumber =
+            index + 1;
+
+          if (
+            !/^\d+$/.test(
+              String(
+                item.product_code ||
+                ""
+              ).trim()
+            )
+          ) {
+
+            alert(
+              `Product Number ແຖວ ${rowNumber} ຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ`
+            );
+
+            return;
+
+          }
+
+          if (
+            !String(
+              item.product_name ||
+              ""
+            ).trim()
+          ) {
+
+            alert(
+              `ກະລຸນາໃສ່ຊື່ສິນຄ້າ ແຖວ ${rowNumber}`
+            );
+
+            return;
+
+          }
+
+          const qty =
+            numberValue(
+              item.qty
+            );
+
+          if (
+            !Number.isFinite(
+              qty
+            ) ||
+            qty <= 0
+          ) {
+
+            alert(
+              `Qty ແຖວ ${rowNumber} ຕ້ອງຫຼາຍກວ່າ 0`
+            );
+
+            return;
+
+          }
+
+          if (
+            !String(
+              item.unit ||
+              ""
+            ).trim()
+          ) {
+
+            alert(
+              `ກະລຸນາເລືອກ Unit ແຖວ ${rowNumber}`
+            );
+
+            return;
+
+          }
+
+          const weight =
+            numberValue(
+              item.weight
+            );
+
+          if (
+            !Number.isFinite(
+              weight
+            ) ||
+            weight < 0
+          ) {
+
+            alert(
+              `ນ້ຳໜັກລວມ ແຖວ ${rowNumber} ບໍ່ຖືກຕ້ອງ`
+            );
+
+            return;
+
+          }
+
+          const totalPrice =
+            numberValue(
+              item.total_price
+            );
+
+          if (
+            !Number.isFinite(
+              totalPrice
+            ) ||
+            totalPrice < 0
+          ) {
+
+            alert(
+              `ລາຄາລວມ ແຖວ ${rowNumber} ບໍ່ຖືກຕ້ອງ`
+            );
+
+            return;
+
+          }
+
+        }
+
+        // -------------------------------------------------
+        // SAVE EACH ITEM
+        // -------------------------------------------------
+
+        for (
+          let index = 0;
+          index < items.length;
+          index++
+        ) {
+
+          const item =
+            items[index];
+
+          const qty =
+            numberValue(
+              item.qty
+            );
+
+          const weight =
+            numberValue(
+              item.weight
+            );
+
+          const totalPrice =
+            numberValue(
+              item.total_price
+            );
+
+          const unitWeight =
+            calculateUnitWeight(
+              qty,
+              weight
+            );
+
+          const unitPrice =
+            calculateUnitPrice(
+              qty,
+              totalPrice
+            );
+
+          const formData =
+            new FormData();
+
+          formData.append(
+            "invoice_no",
+            invoiceNo
+          );
+
+          formData.append(
+            "invoice_date",
+            invoiceDate
+          );
+
+          formData.append(
+            "supplier",
+            registeredSupplier.supplier_name
+          );
+
+          formData.append(
+            "product_code",
+            String(
+              item.product_code ||
+              ""
+            ).trim()
+          );
+
+          formData.append(
+            "product_name",
+            String(
+              item.product_name ||
+              ""
+            ).trim()
+          );
+
+          formData.append(
+            "qty",
+            qty
+          );
+
+          formData.append(
+            "unit",
+            item.unit
+          );
+
+          formData.append(
+            "weight",
+            Number.isFinite(
+              weight
+            )
+              ? weight
+              : 0
+          );
+
+          formData.append(
+            "unit_weight",
+            Number(
+              unitWeight || 0
+            )
+          );
+
+          formData.append(
+            "total_price",
+            totalPrice
+          );
+
+          formData.append(
+            "unit_price",
+            Number(
+              unitPrice || 0
+            )
+          );
+
+          Object.entries(
+            files
+          ).forEach(
+            ([key, file]) => {
+
+              if (file) {
+
+                formData.append(
+                  key,
+                  file
+                );
+
+              }
+
+            }
+          );
+
+          let url =
+            `${API}/exports`;
+
+          let method =
+            "POST";
+
+          if (
+            editId
+          ) {
+
+            url =
+              `${API}/exports/${editId}`;
+
+            method =
+              "PUT";
+
+          }
+
+          const res =
+            await fetch(
+              url,
+              {
+                method,
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`
+                },
+                body:
+                  formData
+              }
+            );
+
+          const result =
+            await res.json();
+
+          if (
+            !res.ok ||
+            !result.success
+          ) {
+
+            throw new Error(
+              result.message ||
+              "Save failed"
+            );
+
+          }
+
+          // Edit represents one existing row.
+          if (
+            editId
+          ) {
+
+            break;
+
+          }
+
+        }
+
+        alert(
+          editId
+            ? "ແກ້ໄຂ Export Invoice ສຳເລັດ"
+            : "ບັນທຶກ Export Invoice ສຳເລັດ"
+        );
+
+        resetForm();
+
+        await loadData();
+
+      } catch (error) {
+
+        console.error(
+          "Export save error:",
+          error
+        );
+
+        alert(
+          "ບັນທຶກບໍ່ສຳເລັດ: " +
+          error.message
+        );
+
+      }
+
+    };
+
+  // =======================================================
+  // DELETE
+  // =======================================================
+
+  const deleteData =
+    async (id) => {
+
+      if (
+        !window.confirm(
+          "ຢືນຢັນການລຶບ Export ?"
+        )
+      ) {
+
+        return;
+
+      }
+
+      try {
+
+        const res =
+          await fetch(
+            `${API}/exports/${id}`,
+            {
+              method:
+                "DELETE",
+              headers: {
+                Authorization:
+                  `Bearer ${token}`
+              }
+            }
+          );
+
+        const result =
+          await res.json();
+
+        if (
+          !res.ok ||
+          !result.success
+        ) {
+
+          throw new Error(
+            result.message ||
+            "Delete failed"
+          );
+
+        }
+
+        if (
+          String(editId) ===
+          String(id)
+        ) {
+
+          resetForm();
+
+        }
+
+        await loadData();
+
+      } catch (error) {
+
+        console.error(
+          "Delete export error:",
+          error
+        );
+
+        alert(
+          "ລົບບໍ່ສຳເລັດ: " +
+          error.message
+        );
+
+      }
+
+    };
+
+  // =======================================================
+  // EDIT
+  // =======================================================
+
+  const editData =
+    (item) => {
+
+      closeAllDropdowns();
+
+      setEditId(
+        item.id
+      );
+
+      setForm({
+        invoice_no:
+          item.invoice_no ||
+          "",
+
+        invoice_date:
+          item.invoice_date ||
+          "",
+
+        supplier:
+          item.supplier ||
+          ""
+      });
+
+      setItems([
+        {
+          product_code:
+            item.product_code ||
+            "",
+
+          product_name:
+            item.product_name ||
+            "",
+
+          qty:
+            item.qty !== null &&
+            item.qty !== undefined
+              ? formatNumberInput(
+                  item.qty
+                )
+              : "",
+
+          unit:
+            item.unit ||
+            "",
+
+          weight:
+            item.weight !== null &&
+            item.weight !== undefined
+              ? formatNumberInput(
+                  item.weight
+                )
+              : "",
+
+          unit_weight:
+            calculateUnitWeight(
+              item.qty,
+              item.weight
+            ),
+
+          total_price:
+            item.total_price !== null &&
+            item.total_price !== undefined
+              ? formatNumberInput(
+                  item.total_price
+                )
+              : "",
+
+          unit_price:
+            calculateUnitPrice(
+              item.qty,
+              item.total_price
+            )
+        }
+      ]);
+
+      setOldFiles({
+
+        invoice_file:
+          item.invoice_file ||
+          "",
+
+        payment_file:
+          item.payment_file ||
+          "",
+
+        formd_file:
+          item.formd_file ||
+          "",
+
+        phytos_file:
+          item.phytos_file ||
+          "",
+
+        tax_file:
+          item.tax_file ||
+          "",
+
+        export_license_file:
+          item.export_license_file ||
+          "",
+
+        origin_file:
+          item.origin_file ||
+          "",
+
+        acdd_file:
+          item.acdd_file ||
+          ""
+
+      });
+
+      setFiles({});
+
+      setDocType(
+        "invoice_file"
+      );
+
+      window.scrollTo({
+        top: 0,
+        behavior:
+          "smooth"
+      });
+
+    };
+
+  // =======================================================
+  // SEARCH
+  // =======================================================
 
   const keyword =
     search
       .trim()
       .toLowerCase();
 
-
   const filtered =
     keyword === ""
-
       ? []
-
       : list.filter(
           (item) => {
 
@@ -1564,17 +1883,34 @@ function ExportInvoice() {
 
               item.product_name,
 
-              item.supplier
+              item.unit,
+
+              item.supplier,
+
+              item.invoice_file,
+
+              item.payment_file,
+
+              item.formd_file,
+
+              item.phytos_file,
+
+              item.tax_file,
+
+              item.export_license_file,
+
+              item.origin_file,
+
+              item.acdd_file
 
             ];
 
-
             return fields.some(
               (value) =>
-
                 String(
                   value ?? ""
                 )
+                  .trim()
                   .toLowerCase()
                   .includes(
                     keyword
@@ -1584,22 +1920,65 @@ function ExportInvoice() {
           }
         );
 
+  // =======================================================
+  // TOTALS
+  // =======================================================
 
-  // =====================================================
+  const totalQty =
+    items.reduce(
+      (
+        total,
+        item
+      ) =>
+        total +
+        (
+          numberValue(
+            item.qty
+          ) || 0
+        ),
+      0
+    );
+
+  const totalWeight =
+    items.reduce(
+      (
+        total,
+        item
+      ) =>
+        total +
+        (
+          numberValue(
+            item.weight
+          ) || 0
+        ),
+      0
+    );
+
+  const totalPrice =
+    items.reduce(
+      (
+        total,
+        item
+      ) =>
+        total +
+        (
+          numberValue(
+            item.total_price
+          ) || 0
+        ),
+      0
+    );
+
+  // =======================================================
   // FILE URL
-  // =====================================================
+  // =======================================================
 
   const getFileUrl =
     (file) => {
 
-      if (
-        !file
-      ) {
-
+      if (!file) {
         return "";
-
       }
-
 
       return `${
         API.replace(
@@ -1610,949 +1989,1057 @@ function ExportInvoice() {
 
     };
 
-
-  // =====================================================
+  // =======================================================
   // RENDER
-  // =====================================================
+  // =======================================================
 
   return (
 
-    <div className="page">
+    <div
+      ref={pageRef}
+      className="cwms-export-page"
+    >
 
-      <h1>
-        📤 ສົ່ງອອກສິນຄ້າ
-      </h1>
+      {/* ===================================================
+          HEADER
+      =================================================== */}
 
+      <div className="dashboard-header">
 
-      {/* =================================================
-          PRODUCT
-      ================================================= */}
+        <div>
 
-      <div className="card">
+          <h1 className="dashboard-title">
+            📤 Export Invoice
+          </h1>
 
-        <h3>
-          📦 ຂໍ້ມູນສິນຄ້າ
-        </h3>
-
-
-        {/* IMPORT INVOICE */}
-
-        <div
-          style={{
-            display:
-              "flex",
-
-            gap:
-              "10px",
-
-            marginBottom:
-              "15px"
-          }}
-        >
-
-          <input
-            placeholder="ໃສ່ເລກ Invoice ທີ່ຈະນຳອອກ"
-            value={
-              invoiceSearch
-            }
-            onChange={(e) =>
-              setInvoiceSearch(
-                e.target.value
-              )
-            }
-          />
-
-
-          <button
-            type="button"
-            onClick={
-              loadInvoice
-            }
-          >
-            📥 ດຶງຂໍ້ມູນ
-          </button>
+          <p className="dashboard-subtitle">
+            Home / Export / Export Invoice
+          </p>
 
         </div>
 
+      </div>
 
-        {/* PRODUCT NUMBER */}
+      {/* ===================================================
+          EXPORT FORM
+      =================================================== */}
 
-        <input
-          placeholder="Product Number (ตัวเลขเท่านั้น)"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          value={
-            form.product_code
-          }
-          onChange={(e) =>
-            setForm(
-              (prev) => ({
+      <div className="panel cwms-export-panel">
 
-                ...prev,
+        <div className="cwms-section-header">
 
-                product_code:
-                  e.target.value.replace(
-                    /\D/g,
-                    ""
-                  )
+          <div>
 
-              })
-            )
-          }
-        />
+            <h2>
+              📤 ຂໍ້ມູນສົ່ງອອກ
+            </h2>
 
+            <p>
+              ດຶງຂໍ້ມູນຈາກ Import Invoice ແລະ ເລືອກສິນຄ້າທີ່ຈະສົ່ງອອກ
+            </p>
 
-        {/* PRODUCT NAME */}
+          </div>
 
-        <input
-          placeholder="ຊື່ສິນຄ້າ"
-          value={
-            form.product_name
-          }
-          onChange={(e) =>
-            setForm(
-              (prev) => ({
+        </div>
 
-                ...prev,
+        {/* =================================================
+            IMPORT INVOICE SEARCH
+        ================================================= */}
 
-                product_name:
-                  e.target.value
+        <div className="cwms-export-invoice-source">
 
-              })
-            )
-          }
-        />
+          <div className="cwms-form-field">
 
+            <label>
+              Import Invoice
+              <span className="cwms-required">
+                *
+              </span>
+            </label>
 
-        {/* QTY */}
+            <div className="cwms-inline-search">
 
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder="ຈຳນວນ"
-          value={
-            form.qty
-          }
-          onChange={(e) =>
-            handleQtyChange(
-              e.target.value
-            )
-          }
-        />
-
-
-        {/* UNIT */}
-
-        <div
-          ref={
-            unitRef
-          }
-          style={{
-            position:
-              "relative",
-
-            width:
-              "100%"
-          }}
-        >
-
-          <input
-            placeholder="ຫົວໜ່ວຍ - ພິມເພື່ອຄົ້ນຫາ"
-            value={
-              form.unit
-            }
-            onFocus={() => {
-
-              setShowUnitList(
-                true
-              );
-
-              setShowSupplierList(
-                false
-              );
-
-            }}
-            onChange={(e) => {
-
-              setForm(
-                (prev) => ({
-
-                  ...prev,
-
-                  unit:
+              <input
+                className="form-control"
+                placeholder="ໃສ່ເລກ Invoice ຈາກ Import Invoice"
+                value={
+                  invoiceSearch
+                }
+                onChange={(e) =>
+                  setInvoiceSearch(
                     e.target.value
-
-                })
-              );
-
-
-              setShowUnitList(
-                true
-              );
-
-            }}
-          />
-
-
-          {showUnitList && (
-
-            <div
-              style={{
-                position:
-                  "absolute",
-
-                top:
-                  "100%",
-
-                left:
-                  0,
-
-                width:
-                  "100%",
-
-                background:
-                  "#fff",
-
-                border:
-                  "1px solid #ccc",
-
-                borderRadius:
-                  "6px",
-
-                maxHeight:
-                  "250px",
-
-                overflowY:
-                  "auto",
-
-                zIndex:
-                  99999,
-
-                boxShadow:
-                  "0 4px 12px rgba(0,0,0,0.15)"
-              }}
-            >
-
-              {filteredUnits.length === 0 ? (
-
-                <div
-                  style={{
-                    padding:
-                      "12px",
-
-                    color:
-                      "#777"
-                  }}
-                >
-
-                  ບໍ່ພົບຫົວໜ່ວຍ
-
-                </div>
-
-              ) : (
-
-                filteredUnits.map(
-                  (item) => (
-
-                    <div
-                      key={
-                        item.value
-                      }
-                      onMouseDown={(e) => {
-
-                        e.preventDefault();
-
-                        selectUnit(
-                          item
-                        );
-
-                      }}
-                      style={{
-                        padding:
-                          "10px 12px",
-
-                        cursor:
-                          "pointer",
-
-                        borderBottom:
-                          "1px solid #eee"
-                      }}
-                      onMouseEnter={(e) => {
-
-                        e.currentTarget.style.background =
-                          "#f3f4f6";
-
-                      }}
-                      onMouseLeave={(e) => {
-
-                        e.currentTarget.style.background =
-                          "#fff";
-
-                      }}
-                    >
-
-                      <div
-                        style={{
-                          fontWeight:
-                            "bold"
-                        }}
-                      >
-
-                        {item.value}
-
-                      </div>
-
-
-                      <div
-                        style={{
-                          fontSize:
-                            "12px",
-
-                          color:
-                            "#777",
-
-                          marginTop:
-                            "3px"
-                        }}
-                      >
-
-                        {item.meaning}
-
-                      </div>
-
-                    </div>
-
                   )
-                )
+                }
+                onKeyDown={(e) => {
 
-              )}
+                  if (
+                    e.key ===
+                    "Enter"
+                  ) {
+
+                    loadInvoice();
+
+                  }
+
+                }}
+              />
+
+              <button
+                type="button"
+                className="cwms-btn cwms-btn-primary"
+                onClick={
+                  loadInvoice
+                }
+              >
+                📥 ດຶງຂໍ້ມູນ
+              </button>
 
             </div>
 
-          )}
+            <small className="cwms-help-text">
+              ເລກ Invoice ນີ້ດຶງຈາກ Import Invoice ໂດຍກົງ
+            </small>
+
+          </div>
 
         </div>
 
+        {/* =================================================
+            HEADER FIELDS
+        ================================================= */}
 
-        {/* UNIT WEIGHT */}
+        <div className="cwms-export-header-grid">
 
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder="ນ້ຳໜັກຕໍ່ໜ່ວຍ"
-          value={
-            form.unit_weight
-          }
-          onChange={(e) =>
-            setForm(
-              (prev) => ({
+          {/* Invoice */}
 
-                ...prev,
+          <div className="cwms-form-field">
 
-                unit_weight:
-                  formatNumberInput(
-                    e.target.value
-                  )
+            <label>
+              Invoice No
+              <span className="cwms-required">
+                *
+              </span>
+            </label>
 
-              })
-            )
-          }
-        />
+            <input
+              className="form-control"
+              value={
+                form.invoice_no
+              }
+              onChange={(e) =>
+                setForm(
+                  (previous) => ({
+                    ...previous,
+                    invoice_no:
+                      e.target.value
+                  })
+                )
+              }
+              placeholder="Invoice No"
+            />
 
+          </div>
 
-        {/* TOTAL WEIGHT */}
+          {/* Supplier */}
 
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder="ນ້ຳໜັກລວມ"
-          value={
-            form.weight
-          }
-          onChange={(e) =>
-            setForm(
-              (prev) => ({
+          <div className="cwms-form-field cwms-dropdown-field">
 
-                ...prev,
+            <label>
+              Supplier
+              <span className="cwms-required">
+                *
+              </span>
+            </label>
 
-                weight:
-                  formatNumberInput(
-                    e.target.value
-                  )
+            <input
+              className="form-control"
+              value={
+                form.supplier
+              }
+              placeholder="ພິມເພື່ອຄົ້ນຫາ Supplier"
+              onFocus={() => {
 
-              })
-            )
-          }
-        />
+                setShowSupplierSuggestions(
+                  true
+                );
 
+                setActiveUnitRow(
+                  null
+                );
 
-        {/* TOTAL PRICE */}
+              }}
+              onChange={(e) => {
 
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder="ລາຄາລວມ"
-          value={
-            form.total_price
-          }
-          onChange={(e) =>
-            handleTotalPriceChange(
-              e.target.value
-            )
-          }
-        />
+                setForm(
+                  (previous) => ({
+                    ...previous,
+                    supplier:
+                      e.target.value
+                  })
+                );
 
+                setShowSupplierSuggestions(
+                  true
+                );
 
-        {/* UNIT PRICE */}
+              }}
+            />
 
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder="ລາຄາຕໍ່ໜ່ວຍ"
-          value={
-            form.unit_price
-          }
-          readOnly
-          style={{
-            background:
-              "#f3f4f6",
+            {showSupplierSuggestions &&
+              form.supplier !== "" && (
 
-            fontWeight:
-              "bold",
+                <div className="cwms-dropdown cwms-supplier-dropdown">
 
-            cursor:
-              "not-allowed"
-          }}
-        />
-
-
-        {/* SUPPLIER */}
-
-        <div
-          ref={
-            supplierRef
-          }
-          style={{
-            position:
-              "relative",
-
-            width:
-              "100%"
-          }}
-        >
-
-          <input
-            placeholder="ຜູ້ສະໜອງ"
-            value={
-              form.supplier
-            }
-            onFocus={() => {
-
-              setShowSupplierList(
-                true
-              );
-
-              setShowUnitList(
-                false
-              );
-
-            }}
-            onChange={(e) => {
-
-              setForm(
-                (prev) => ({
-
-                  ...prev,
-
-                  supplier:
-                    e.target.value
-
-                })
-              );
-
-
-              setShowSupplierList(
-                true
-              );
-
-            }}
-          />
-
-
-          {showSupplierList &&
-            form.supplier !== "" && (
-
-              <div
-                style={{
-                  position:
-                    "absolute",
-
-                  top:
-                    "100%",
-
-                  left:
-                    0,
-
-                  width:
-                    "100%",
-
-                  background:
-                    "#fff",
-
-                  border:
-                    "1px solid #ccc",
-
-                  borderRadius:
-                    "6px",
-
-                  maxHeight:
-                    "180px",
-
-                  overflowY:
-                    "auto",
-
-                  zIndex:
-                    99999,
-
-                  boxShadow:
-                    "0 4px 12px rgba(0,0,0,0.15)"
-                }}
-              >
-
-                {suppliers
-
-                  .filter(
-                    (item) => {
-
-                      const name =
+                  {suppliers
+                    .filter(
+                      (item) =>
                         String(
                           item.supplier_name ||
                           ""
+                        )
+                          .toLowerCase()
+                          .includes(
+                            String(
+                              form.supplier ||
+                              ""
+                            ).toLowerCase()
+                          )
+                    )
+                    .slice(0, 8)
+                    .map(
+                      (item) => {
+
+                        const name =
+                          String(
+                            item.supplier_name ||
+                            ""
+                          );
+
+                        if (!name) {
+                          return null;
+                        }
+
+                        return (
+
+                          <div
+                            key={
+                              item.id
+                            }
+                            className="cwms-dropdown-option"
+                            onMouseDown={(e) => {
+
+                              e.preventDefault();
+
+                              selectSupplier(
+                                item
+                              );
+
+                            }}
+                          >
+
+                            <strong>
+                              {name}
+                            </strong>
+
+                          </div>
+
                         );
 
+                      }
+                    )}
 
-                      return name
+                  {suppliers.filter(
+                    (item) =>
+                      String(
+                        item.supplier_name ||
+                        ""
+                      )
                         .toLowerCase()
                         .includes(
                           String(
                             form.supplier ||
                             ""
-                          )
-                            .toLowerCase()
-                        );
+                          ).toLowerCase()
+                        )
+                  ).length === 0 && (
 
-                    }
-                  )
+                    <div className="cwms-dropdown-empty">
+                      ບໍ່ພົບ Supplier
+                    </div>
 
-                  .map(
-                    (item) => {
-
-                      const name =
-                        String(
-                          item.supplier_name ||
-                          ""
-                        );
-
-
-                      if (
-                        !name
-                      ) {
-
-                        return null;
-
-                      }
-
-
-                      return (
-
-                        <div
-                          key={
-                            item.id
-                          }
-                          onMouseDown={(e) => {
-
-                            e.preventDefault();
-
-
-                            setForm(
-                              (prev) => ({
-
-                                ...prev,
-
-                                supplier:
-                                  name
-
-                              })
-                            );
-
-
-                            setShowSupplierList(
-                              false
-                            );
-
-                          }}
-                          style={{
-                            padding:
-                              "10px",
-
-                            cursor:
-                              "pointer"
-                          }}
-                          onMouseEnter={(e) => {
-
-                            e.currentTarget.style.background =
-                              "#f3f4f6";
-
-                          }}
-                          onMouseLeave={(e) => {
-
-                            e.currentTarget.style.background =
-                              "#fff";
-
-                          }}
-                        >
-
-                          {name}
-
-                        </div>
-
-                      );
-
-                    }
                   )}
+
+                </div>
+
+              )}
+
+          </div>
+
+          {/* Date */}
+
+          <div className="cwms-form-field">
+
+            <label>
+              Invoice Date
+              <span className="cwms-required">
+                *
+              </span>
+            </label>
+
+            <input
+              ref={
+                invoiceDateInputRef
+              }
+              className="form-control"
+              type="date"
+              value={
+                form.invoice_date
+              }
+              onChange={(e) =>
+                setForm(
+                  (previous) => ({
+                    ...previous,
+                    invoice_date:
+                      e.target.value
+                  })
+                )
+              }
+              onClick={
+                openInvoiceDatePicker
+              }
+            />
+
+          </div>
+
+        </div>
+
+        {/* ===================================================
+            PRODUCT ITEMS
+            =================================================== */}
+
+        <div className="panel cwms-invoice-panel">
+
+          <div className="cwms-section-header">
+
+            <h3>
+              🛒 ລາຍການສິນຄ້າ
+            </h3>
+
+          </div>
+
+          <div className="cwms-table-wrapper">
+
+            <table className="cwms-invoice-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    #
+                  </th>
+
+                  <th>
+                    ລະຫັດສິນຄ້າ
+                  </th>
+
+                  <th>
+                    ຊື່ສິນຄ້າ
+                  </th>
+
+                  <th>
+                    ປະເພດສິນຄ້າ
+                  </th>
+
+                  <th>
+                    ຈຳນວນ
+                    <br />
+                    (Qty)
+                  </th>
+
+                  <th>
+                    ໜ່ວຍ
+                    <br />
+                    (Unit)
+                  </th>
+
+                  <th>
+                    ນ້ຳໜັກລວມ
+                    <br />
+                    (kg)
+                  </th>
+
+                  <th>
+                    ນ້ຳໜັກຕໍ່ໜ່ວຍ
+                    <br />
+                    (kg)
+                  </th>
+
+                  <th>
+                    ລາຄາລວມ
+                    <br />
+                    (KIP)
+                  </th>
+
+                  <th>
+                    ລາຄາຕໍ່ໜ່ວຍ
+                    <br />
+                    (KIP)
+                  </th>
+
+                  <th>
+                    ຈັດການ
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {items.map(
+                  (
+                    item,
+                    index
+                  ) => {
+
+                    // =========================================
+                    // UNIT SEARCH
+                    // =========================================
+
+                    const unitKeyword =
+                      String(
+                        item.unit || ""
+                      )
+                        .trim()
+                        .toLowerCase();
+
+                    const filteredUnits =
+                      UNIT_OPTIONS
+                        .filter(
+                          (unit) => {
+                            if (
+                              !unitKeyword
+                            ) {
+                              return true;
+                            }
+
+                            return (
+                              unit.value
+                                .toLowerCase()
+                                .includes(
+                                  unitKeyword
+                                ) ||
+                              unit.meaning
+                                .toLowerCase()
+                                .includes(
+                                  unitKeyword
+                                )
+                            );
+                          }
+                        )
+                        .slice(0, 6);
+
+                    // =========================================
+                    // PRODUCT TYPE SEARCH
+                    // =========================================
+
+                    const productTypeKeyword =
+                      String(
+                        item.product_type ||
+                        ""
+                      )
+                        .trim()
+                        .toLowerCase();
+
+                    const filteredProductTypes =
+                      PRODUCT_TYPE_OPTIONS
+                        .filter(
+                          (productType) => {
+                            if (
+                              !productTypeKeyword
+                            ) {
+                              return true;
+                            }
+
+                            return (
+                              productType.value
+                                .toLowerCase()
+                                .includes(
+                                  productTypeKeyword
+                                ) ||
+                              productType.meaning
+                                .toLowerCase()
+                                .includes(
+                                  productTypeKeyword
+                                )
+                            );
+                          }
+                        )
+                        .slice(0, 6);
+
+                    return (
+                      <tr
+                        key={index}
+                      >
+
+                        {/* NUMBER */}
+
+                        <td className="cwms-table-number">
+                          {index + 1}
+                        </td>
+
+                        {/* PRODUCT CODE */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="P001"
+                            value={
+                              item.product_code
+                            }
+                            onFocus={
+                              closeAllDropdowns
+                            }
+                            onChange={(e) =>
+                              updateItem(
+                                index,
+                                "product_code",
+                                e.target.value
+                              )
+                            }
+                          />
+
+                        </td>
+
+                        {/* PRODUCT NAME */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input"
+                            type="text"
+                            placeholder="ຊື່ສິນຄ້າ"
+                            value={
+                              item.product_name
+                            }
+                            onFocus={
+                              closeAllDropdowns
+                            }
+                            onChange={(e) =>
+                              updateItem(
+                                index,
+                                "product_name",
+                                e.target.value
+                              )
+                            }
+                          />
+
+                        </td>
+
+                        {/* PRODUCT TYPE */}
+
+                        <td className="cwms-dropdown-cell">
+
+                          <input
+                            className="form-control cwms-table-input"
+                            type="text"
+                            placeholder="ພິມ Code / ຊື່ປະເພດ"
+                            value={
+                              item.product_type ||
+                              ""
+                            }
+                            onFocus={() => {
+                              setShowSupplierSuggestions(
+                                false
+                              );
+
+                              setActiveUnitRow(
+                                null
+                              );
+
+                              setActiveProductTypeRow(
+                                index
+                              );
+                            }}
+                            onChange={(e) => {
+                              updateItem(
+                                index,
+                                "product_type",
+                                e.target.value
+                              );
+
+                              setShowSupplierSuggestions(
+                                false
+                              );
+
+                              setActiveUnitRow(
+                                null
+                              );
+
+                              setActiveProductTypeRow(
+                                index
+                              );
+                            }}
+                          />
+
+                          {activeProductTypeRow ===
+                            index && (
+
+                            <div
+                              className="cwms-dropdown"
+                              onMouseDown={(e) =>
+                                e.stopPropagation()
+                              }
+                            >
+
+                              {filteredProductTypes.length ===
+                              0 ? (
+
+                                <div className="cwms-dropdown-empty">
+                                  ບໍ່ພົບປະເພດສິນຄ້າ
+                                </div>
+
+                              ) : (
+
+                                filteredProductTypes.map(
+                                  (
+                                    productType
+                                  ) => (
+
+                                    <button
+                                      type="button"
+                                      className="cwms-dropdown-option cwms-dropdown-option-detail"
+                                      key={
+                                        productType.value
+                                      }
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+
+                                        selectProductType(
+                                          index,
+                                          productType
+                                        );
+                                      }}
+                                    >
+
+                                      <strong>
+                                        {
+                                          productType.value
+                                        }
+                                      </strong>
+
+                                      <span>
+                                        {
+                                          productType.meaning
+                                        }
+                                      </span>
+
+                                    </button>
+
+                                  )
+                                )
+
+                              )}
+
+                            </div>
+
+                          )}
+
+                        </td>
+
+                        {/* QTY */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input cwms-number-input"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={
+                              item.qty
+                            }
+                            onFocus={
+                              closeAllDropdowns
+                            }
+                            onChange={(e) =>
+                              updateItem(
+                                index,
+                                "qty",
+                                e.target.value
+                              )
+                            }
+                          />
+
+                        </td>
+
+                        {/* UNIT */}
+
+                        <td className="cwms-dropdown-cell">
+
+                          <input
+                            className="form-control cwms-table-input"
+                            type="text"
+                            placeholder="ພິມ Unit"
+                            value={
+                              item.unit || ""
+                            }
+                            onFocus={() => {
+                              setShowSupplierSuggestions(
+                                false
+                              );
+
+                              setActiveProductTypeRow(
+                                null
+                              );
+
+                              setActiveUnitRow(
+                                index
+                              );
+                            }}
+                            onChange={(e) => {
+                              updateItem(
+                                index,
+                                "unit",
+                                e.target.value
+                              );
+
+                              setShowSupplierSuggestions(
+                                false
+                              );
+
+                              setActiveProductTypeRow(
+                                null
+                              );
+
+                              setActiveUnitRow(
+                                index
+                              );
+                            }}
+                          />
+
+                          {activeUnitRow ===
+                            index && (
+
+                            <div
+                              className="cwms-dropdown"
+                              onMouseDown={(e) =>
+                                e.stopPropagation()
+                              }
+                            >
+
+                              {filteredUnits.length ===
+                              0 ? (
+
+                                <div className="cwms-dropdown-empty">
+                                  ບໍ່ພົບ Unit
+                                </div>
+
+                              ) : (
+
+                                filteredUnits.map(
+                                  (unit) => (
+
+                                    <button
+                                      type="button"
+                                      className="cwms-dropdown-option cwms-dropdown-option-detail"
+                                      key={
+                                        unit.value
+                                      }
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+
+                                        selectUnit(
+                                          index,
+                                          unit
+                                        );
+                                      }}
+                                    >
+
+                                      <strong>
+                                        {
+                                          unit.value
+                                        }
+                                      </strong>
+
+                                      <span>
+                                        {
+                                          unit.meaning
+                                        }
+                                      </span>
+
+                                    </button>
+
+                                  )
+                                )
+
+                              )}
+
+                            </div>
+
+                          )}
+
+                        </td>
+
+                        {/* TOTAL WEIGHT */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input cwms-number-input"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0.0000"
+                            value={
+                              item.weight
+                            }
+                            onFocus={
+                              closeAllDropdowns
+                            }
+                            onChange={(e) =>
+                              updateItem(
+                                index,
+                                "weight",
+                                e.target.value
+                              )
+                            }
+                          />
+
+                        </td>
+
+                        {/* UNIT WEIGHT */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input cwms-readonly-input"
+                            type="text"
+                            value={
+                              item.unit_weight
+                            }
+                            readOnly
+                          />
+
+                        </td>
+
+                        {/* TOTAL PRICE */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input cwms-number-input"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={
+                              item.total_price
+                            }
+                            onFocus={
+                              closeAllDropdowns
+                            }
+                            onChange={(e) =>
+                              updateItem(
+                                index,
+                                "total_price",
+                                e.target.value
+                              )
+                            }
+                          />
+
+                        </td>
+
+                        {/* UNIT PRICE */}
+
+                        <td>
+
+                          <input
+                            className="form-control cwms-table-input cwms-readonly-input"
+                            type="text"
+                            value={
+                              item.unit_price
+                            }
+                            readOnly
+                          />
+
+                        </td>
+
+                        {/* DELETE */}
+
+                        <td className="cwms-table-action">
+
+                          <button
+                            type="button"
+                            className="cwms-btn cwms-btn-danger"
+                            onClick={() =>
+                              removeItem(
+                                index
+                              )
+                            }
+                          >
+                            🗑
+                          </button>
+
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          {/* =================================================
+              ADD ITEM
+              ================================================= */}
+
+          <div className="cwms-add-item-row">
+
+            <button
+              type="button"
+              className="cwms-btn cwms-btn-outline-success"
+              onClick={addItem}
+            >
+              ＋ ເພີ່ມລາຍການສິນຄ້າ
+            </button>
+
+          </div>
+
+          {/* =================================================
+              SUMMARY
+              ================================================= */}
+
+          <div className="cwms-invoice-summary">
+
+            <h4>
+              ລວມທັງໝົດ
+            </h4>
+
+            <div className="cwms-summary-grid">
+
+              <div className="cwms-summary-item">
+
+                <span>
+                  ຈຳນວນລວມ
+                </span>
+
+                <strong>
+                  {
+                    formatNumberDisplay(
+                      totalQty
+                    )
+                  }
+                </strong>
 
               </div>
 
-            )}
+              <div className="cwms-summary-item">
+
+                <span>
+                  ນ້ຳໜັກລວມ
+                </span>
+
+                <strong>
+                  {
+                    formatNumberDisplay(
+                      totalWeight,
+                      4
+                    )
+                  }
+                  {" "}kg
+                </strong>
+
+              </div>
+
+              <div className="cwms-summary-item cwms-summary-price">
+
+                <span>
+                  ລາຄາລວມທັງໝົດ
+                </span>
+
+                <strong>
+                  {
+                    formatNumberDisplay(
+                      totalPrice
+                    )
+                  }
+                  {" "}KIP
+                </strong>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* =================================================
+              BUTTONS
+              ================================================= */}
+
+          <div className="cwms-form-actions">
+
+            <button
+              type="button"
+              className="cwms-btn cwms-btn-secondary"
+              onClick={resetForm}
+            >
+              ຍົກເລີກ
+            </button>
+
+            <button
+              type="button"
+              className="cwms-btn cwms-btn-primary"
+              onClick={saveData}
+            >
+              💾{" "}
+              {
+                editId
+                  ? "ແກ້ໄຂຂໍ້ມູນ"
+                  : "ບັນທຶກຂໍ້ມູນ"
+              }
+            </button>
+
+          </div>
 
         </div>
-
-
-        {/* DATE */}
-
-        <input
-          type="date"
-          value={
-            form.invoice_date
-          }
-          onChange={(e) =>
-            setForm(
-              (prev) => ({
-
-                ...prev,
-
-                invoice_date:
-                  e.target.value
-
-              })
-            )
-          }
-          onClick={(e) => {
-
-            if (
-              typeof e.target.showPicker ===
-              "function"
-            ) {
-
-              e.target.showPicker();
-
-            }
-
-          }}
-        />
-
-
-        {/* SAVE */}
-
-        <button
-          type="button"
-          onClick={
-            saveData
-          }
-        >
-
-          {editId
-            ? "💾 ແກ້ໄຂ"
-            : "💾 ບັນທຶກ"}
-
-        </button>
-
-
-        {editId && (
-
-          <button
-            type="button"
-            onClick={
-              resetForm
-            }
-            style={{
-              marginLeft:
-                "10px"
-            }}
-          >
-
-            ❌ ຍົກເລີກ
-
-          </button>
-
-        )}
 
       </div>
 
 
-      {/* =================================================
-          DOCUMENTS
-      ================================================= */}
+      {/* ===================================================
+          SEARCH
+      =================================================== */}
 
-      <div className="card">
+      <div className="panel cwms-export-panel cwms-search-panel">
 
-        <h3>
-          📎 ແນບເອກະສານສົ່ງອອກ
-        </h3>
+        <div className="cwms-section-header">
 
+          <div>
 
-        <select
-          value={
-            docType
-          }
-          onChange={(e) =>
-            setDocType(
-              e.target.value
-            )
-          }
-        >
-
-          <option value="invoice_file">
-            INVOICE
-          </option>
-
-          <option value="payment_file">
-            ໃບໂອນເງິນ
-          </option>
-
-          <option value="formd_file">
-            FORM D
-          </option>
-
-          <option value="phytos_file">
-            PHYTOS
-          </option>
-
-          <option value="tax_file">
-            ໃບມອບອາກອນ
-          </option>
-
-          <option value="export_license_file">
-            ໃບອານຸຍາດສົ່ງອອກ
-          </option>
-
-          <option value="origin_file">
-            ໃບຢັ້ງຢືນແຫຼ່ງກຳເນີດ
-          </option>
-
-          <option value="acdd_file">
-            ໃບແຈ້ງ ACDD
-          </option>
-
-        </select>
-
-
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          onChange={(e) => {
-
-            const file =
-              e.target.files?.[0];
-
-
-            if (
-              !file
-            ) {
-
-              return;
-
-            }
-
-
-            setFiles(
-              (prev) => ({
-
-                ...prev,
-
-                [docType]:
-                  file
-
-              })
-            );
-
-
-            e.target.value =
-              "";
-
-          }}
-        />
-
-
-        <div
-          style={{
-            marginTop:
-              "10px"
-          }}
-        >
-
-          {Object.keys(
-            files
-          ).length === 0 &&
-
-          Object.values(
-            oldFiles
-          )
-            .filter(Boolean)
-            .length === 0 ? (
+            <h2>
+              🔍 ຄົ້ນຫາ Export
+            </h2>
 
             <p>
-              ຍັງບໍ່ມີເອກະສານ
+              Invoice / Product Number / Product / Supplier
             </p>
 
-          ) : (
-
-            <>
-
-              {Object.entries(
-                oldFiles
-              )
-                .filter(
-                  ([, file]) =>
-                    Boolean(file)
-                )
-                .map(
-                  ([type, file]) => (
-
-                    <div
-                      key={type}
-                      style={{
-                        display:
-                          "flex",
-
-                        justifyContent:
-                          "space-between",
-
-                        alignItems:
-                          "center",
-
-                        padding:
-                          "8px",
-
-                        borderBottom:
-                          "1px solid #ddd"
-                      }}
-                    >
-
-                      <a
-                        href={
-                          getFileUrl(
-                            file
-                          )
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-
-                        📄 {file}
-
-                      </a>
-
-                    </div>
-
-                  )
-                )}
-
-
-              {Object.entries(
-                files
-              )
-                .map(
-                  ([key, file]) => (
-
-                    <div
-                      key={key}
-                      style={{
-                        display:
-                          "flex",
-
-                        justifyContent:
-                          "space-between",
-
-                        alignItems:
-                          "center",
-
-                        padding:
-                          "8px",
-
-                        borderBottom:
-                          "1px solid #ddd"
-                      }}
-                    >
-
-                      <span>
-                        {file?.name}
-                      </span>
-
-
-                      <button
-                        type="button"
-                        onClick={() => {
-
-                          const temp =
-                            {
-                              ...files
-                            };
-
-
-                          delete temp[
-                            key
-                          ];
-
-
-                          setFiles(
-                            temp
-                          );
-
-                        }}
-                      >
-
-                        ❌
-
-                      </button>
-
-                    </div>
-
-                  )
-                )}
-
-            </>
-
-          )}
+          </div>
 
         </div>
 
-      </div>
-
-
-      {/* =================================================
-          SEARCH
-      ================================================= */}
-
-      <div className="card">
-
-        <h3>
-          🔍 ຄົ້ນຫາ
-        </h3>
-
-
         <input
-          placeholder="ຄົ້ນຫາ Invoice / Product Code / Product / Supplier"
+          className="form-control"
+          placeholder="ຄົ້ນຫາ Invoice / Product Number / Product / Supplier"
           value={
             search
           }
@@ -2565,356 +3052,347 @@ function ExportInvoice() {
 
       </div>
 
+      {/* ===================================================
+          RESULT TABLE
+      =================================================== */}
 
-      {/* =================================================
-          TABLE
-      ================================================= */}
+      <div className="panel cwms-export-panel">
 
-      <div className="card">
+        <div className="cwms-section-header">
 
-        <table
-          border="1"
-          width="100%"
-          cellPadding="10"
-        >
+          <div>
 
-          <thead>
+            <h2>
+              📋 ລາຍການ Export
+            </h2>
 
-            <tr>
+            <p>
+              ສະແດງຂໍ້ມູນ Export ທີ່ບັນທຶກແລ້ວ
+            </p>
 
-              <th>
-                ID
-              </th>
+          </div>
 
-              <th>
-                Invoice
-              </th>
+        </div>
 
-              <th>
-                Product Code
-              </th>
+        <div className="cwms-table-wrapper">
 
-              <th>
-                Product
-              </th>
+          <table className="cwms-result-table">
 
-              <th>
-                Qty
-              </th>
-
-              <th>
-                Weight
-              </th>
-
-              <th>
-                Unit Price
-              </th>
-
-              <th>
-                Total Price
-              </th>
-
-              <th>
-                Supplier
-              </th>
-
-              <th>
-                Date
-              </th>
-
-              <th>
-                Files
-              </th>
-
-              <th>
-                Action
-              </th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody>
-
-            {search.trim() === "" ? (
+            <thead>
 
               <tr>
 
-                <td
-                  colSpan="12"
-                  align="center"
-                >
+                <th>
+                  ID
+                </th>
 
-                  ພິມ Invoice / Product
-                  ເພື່ອຄົ້ນຫາ
+                <th>
+                  Invoice
+                </th>
 
-                </td>
+                <th>
+                  Product Number
+                </th>
+
+                <th>
+                  Product
+                </th>
+
+                <th>
+                  Qty
+                </th>
+
+                <th>
+                  Weight
+                </th>
+
+                <th>
+                  Unit Price
+                </th>
+
+                <th>
+                  Total Price
+                </th>
+
+                <th>
+                  Supplier
+                </th>
+
+                <th>
+                  Date
+                </th>
+
+                <th>
+                  Files
+                </th>
+
+                <th>
+                  Action
+                </th>
 
               </tr>
 
-            ) : filtered.length === 0 ? (
+            </thead>
 
-              <tr>
+            <tbody>
 
-                <td
-                  colSpan="12"
-                  align="center"
-                >
+              {search.trim() === "" ? (
 
-                  ບໍ່ພົບຂໍ້ມູນ
+                <tr>
 
-                </td>
-
-              </tr>
-
-            ) : (
-
-              filtered.map(
-                (item) => (
-
-                  <tr
-                    key={
-                      item.id
-                    }
+                  <td
+                    colSpan="12"
+                    className="cwms-result-empty"
                   >
+                    ພິມ Invoice / Product ເພື່ອຄົ້ນຫາ
+                  </td>
 
-                    <td>
-                      {item.id}
-                    </td>
+                </tr>
 
-                    <td>
-                      {item.invoice_no}
-                    </td>
+              ) : filtered.length === 0 ? (
 
-                    <td>
-                      {item.product_code || "-"}
-                    </td>
+                <tr>
 
-                    <td>
-                      {item.product_name}
-                    </td>
+                  <td
+                    colSpan="12"
+                    className="cwms-result-empty"
+                  >
+                    ບໍ່ພົບຂໍ້ມູນ
+                  </td>
 
-                    <td>
-                      {formatNumberDisplay(
-                        item.qty
-                      )}
-                    </td>
+                </tr>
 
-                    <td>
-                      {formatNumberDisplay(
-                        item.weight
-                      )}
-                    </td>
+              ) : (
 
-                    <td>
-                      {formatNumberDisplay(
-                        calculateUnitPrice(
-                          item.qty,
-                          item.total_price
-                        )
-                      )}
-                    </td>
+                filtered.map(
+                  (item) => (
 
-                    <td>
-                      {formatNumberDisplay(
-                        item.total_price
-                      )}
-                    </td>
+                    <tr
+                      key={
+                        item.id
+                      }
+                    >
 
-                    <td>
-                      {item.supplier}
-                    </td>
+                      <td>
+                        {item.id}
+                      </td>
 
-                    <td>
-                      {item.invoice_date}
-                    </td>
+                      <td>
+                        {item.invoice_no}
+                      </td>
 
+                      <td>
+                        {item.product_code ||
+                          "-"}
+                      </td>
 
-                    {/* FILES */}
+                      <td>
+                        {item.product_name ||
+                          "-"}
+                      </td>
 
-                    <td>
+                      <td>
+                        {formatNumberDisplay(
+                          item.qty
+                        )}
+                      </td>
 
-                      {item.invoice_file && (
+                      <td>
+                        {formatNumberDisplay(
+                          item.weight,
+                          4
+                        )}
+                      </td>
 
-                        <>
+                      <td>
+                        {formatNumberDisplay(
+                          calculateUnitPrice(
+                            item.qty,
+                            item.total_price
+                          ),
+                          2
+                        )}
+                      </td>
+
+                      <td>
+                        {formatNumberDisplay(
+                          item.total_price,
+                          2
+                        )}
+                      </td>
+
+                      <td>
+                        {item.supplier ||
+                          "-"}
+                      </td>
+
+                      <td>
+                        {item.invoice_date ||
+                          "-"}
+                      </td>
+
+                      {/* FILES */}
+
+                      <td>
+
+                        {item.invoice_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.invoice_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 Invoice
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.payment_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.payment_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 Payment
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.formd_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.formd_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 FORM D
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.phytos_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.phytos_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 PHYTOS
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.tax_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.tax_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 Tax
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.export_license_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.export_license_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 Export License
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.origin_file && (
+
+                          <>
+                            <a
+                              className="cwms-file-link"
+                              href={
+                                getFileUrl(
+                                  item.origin_file
+                                )
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              📄 Origin
+                            </a>
+
+                            <br />
+
+                          </>
+
+                        )}
+
+                        {item.acdd_file && (
 
                           <a
-                            href={
-                              getFileUrl(
-                                item.invoice_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 Invoice
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.payment_file && (
-
-                        <>
-
-                          <a
-                            href={
-                              getFileUrl(
-                                item.payment_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 Payment
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.formd_file && (
-
-                        <>
-
-                          <a
-                            href={
-                              getFileUrl(
-                                item.formd_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 FORM D
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.phytos_file && (
-
-                        <>
-
-                          <a
-                            href={
-                              getFileUrl(
-                                item.phytos_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 PHYTOS
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.tax_file && (
-
-                        <>
-
-                          <a
-                            href={
-                              getFileUrl(
-                                item.tax_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 Tax
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.export_license_file && (
-
-                        <>
-
-                          <a
-                            href={
-                              getFileUrl(
-                                item.export_license_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 Export License
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.origin_file && (
-
-                        <>
-
-                          <a
-                            href={
-                              getFileUrl(
-                                item.origin_file
-                              )
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-
-                            📄 Origin
-
-                          </a>
-
-                          <br />
-
-                        </>
-
-                      )}
-
-
-                      {item.acdd_file && (
-
-                        <>
-
-                          <a
+                            className="cwms-file-link"
                             href={
                               getFileUrl(
                                 item.acdd_file
@@ -2923,63 +3401,65 @@ function ExportInvoice() {
                             target="_blank"
                             rel="noreferrer"
                           >
-
                             📄 ACDD
-
                           </a>
 
-                          <br />
+                        )}
 
-                        </>
+                        {!item.invoice_file &&
+                          !item.payment_file &&
+                          !item.formd_file &&
+                          !item.phytos_file &&
+                          !item.tax_file &&
+                          !item.export_license_file &&
+                          !item.origin_file &&
+                          !item.acdd_file &&
+                          "-"}
 
-                      )}
+                      </td>
 
-                    </td>
+                      {/* ACTION */}
 
+                      <td className="cwms-result-actions">
 
-                    {/* ACTION */}
+                        <button
+                          type="button"
+                          className="cwms-btn cwms-btn-edit cwms-btn-small"
+                          onClick={() =>
+                            editData(
+                              item
+                            )
+                          }
+                        >
+                          ✏️
+                        </button>
 
-                    <td>
+                        <button
+                          type="button"
+                          className="cwms-btn cwms-btn-danger cwms-btn-small"
+                          onClick={() =>
+                            deleteData(
+                              item.id
+                            )
+                          }
+                        >
+                          🗑
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          editData(
-                            item
-                          )
-                        }
-                      >
+                      </td>
 
-                        ✏️
+                    </tr>
 
-                      </button>
-
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          deleteData(
-                            item.id
-                          )
-                        }
-                      >
-
-                        🗑
-
-                      </button>
-
-                    </td>
-
-                  </tr>
-
+                  )
                 )
-              )
 
-            )}
+              )}
 
-          </tbody>
+            </tbody>
 
-        </table>
+          </table>
+
+        </div>
 
       </div>
 
@@ -2988,6 +3468,5 @@ function ExportInvoice() {
   );
 
 }
-
 
 export default ExportInvoice;

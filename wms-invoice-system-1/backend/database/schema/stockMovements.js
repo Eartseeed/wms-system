@@ -276,7 +276,10 @@ async function createStockMovements() {
 
 
                 product_name
-                    TEXT,
+    TEXT,
+
+unit
+    TEXT,
 
 
                 -- =========================================
@@ -551,6 +554,11 @@ async function createStockMovements() {
         "product_name",
         "TEXT"
     );
+    await ensureColumn(
+    "stock_movements",
+    "unit",
+    "TEXT"
+);
 
 
     // =====================================================

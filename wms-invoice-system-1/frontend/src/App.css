@@ -1790,3 +1790,660 @@ body{
     cursor:not-allowed;
 
 }
+/* =========================================================
+   CWMS INVOICE UI
+   ImportInvoice + ExportInvoice
+   ใช้ร่วมกันใน App.css
+   ========================================================= */
+
+.cwms-invoice-page,
+.cwms-export-page {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---------- Header ---------- */
+
+.cwms-invoice-page .dashboard-header,
+.cwms-export-page .dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.cwms-invoice-page .dashboard-title,
+.cwms-export-page .dashboard-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.cwms-invoice-page .dashboard-subtitle,
+.cwms-export-page .dashboard-subtitle {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* ---------- Panel ---------- */
+
+.cwms-invoice-page .panel,
+.cwms-export-page .panel {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #dfe5ee;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.cwms-invoice-page .cwms-invoice-panel,
+.cwms-export-page .cwms-export-panel {
+  overflow: visible;
+}
+
+.cwms-invoice-page .cwms-search-panel,
+.cwms-export-page .cwms-search-panel {
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------- Section ---------- */
+
+.cwms-invoice-page .cwms-section-header,
+.cwms-export-page .cwms-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cwms-invoice-page .cwms-section-header h2,
+.cwms-invoice-page .cwms-section-header h3,
+.cwms-export-page .cwms-section-header h2,
+.cwms-export-page .cwms-section-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.cwms-invoice-page .cwms-section-header p,
+.cwms-export-page .cwms-section-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* ---------- Invoice Header Form ---------- */
+
+.cwms-invoice-page .cwms-invoice-header-grid,
+.cwms-export-page .cwms-export-header-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.cwms-invoice-page .cwms-form-field,
+.cwms-export-page .cwms-form-field {
+  position: relative;
+  min-width: 0;
+}
+
+.cwms-invoice-page .cwms-form-field label,
+.cwms-export-page .cwms-form-field label {
+  display: block;
+  margin: 0 0 6px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cwms-invoice-page .cwms-required,
+.cwms-export-page .cwms-required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.cwms-invoice-page .form-control,
+.cwms-export-page .form-control {
+  width: 100%;
+  height: 40px;
+  padding: 8px 11px;
+  box-sizing: border-box;
+  border: 1px solid #d5dce6;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.cwms-invoice-page .form-control:focus,
+.cwms-export-page .form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, .10);
+}
+
+.cwms-invoice-page .form-control::placeholder,
+.cwms-export-page .form-control::placeholder {
+  color: #94a3b8;
+}
+
+/* ---------- Dropdown ---------- */
+
+.cwms-invoice-page .cwms-dropdown-field,
+.cwms-export-page .cwms-dropdown-field {
+  position: relative;
+}
+
+.cwms-invoice-page .cwms-dropdown,
+.cwms-export-page .cwms-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  max-height: 250px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .14);
+}
+
+.cwms-invoice-page .cwms-dropdown-option,
+.cwms-export-page .cwms-dropdown-option {
+  padding: 9px 11px;
+  background: #fff;
+  border-bottom: 1px solid #eef2f7;
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.cwms-invoice-page .cwms-dropdown-option:hover,
+.cwms-export-page .cwms-dropdown-option:hover {
+  background: #eff6ff;
+}
+
+.cwms-invoice-page .cwms-dropdown-option-detail,
+.cwms-export-page .cwms-dropdown-option-detail {
+  display: block;
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.cwms-invoice-page .cwms-dropdown-empty,
+.cwms-export-page .cwms-dropdown-empty {
+  padding: 12px;
+  color: #64748b;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* ---------- Items ---------- */
+
+.cwms-invoice-page .cwms-items-section,
+.cwms-export-page .cwms-items-section {
+  width: 100%;
+}
+
+.cwms-invoice-page .cwms-items-header,
+.cwms-export-page .cwms-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cwms-invoice-page .cwms-add-item-row,
+.cwms-export-page .cwms-add-item-row {
+  margin-top: 10px;
+}
+
+/* ---------- Table ---------- */
+
+.cwms-invoice-page .cwms-table-wrapper,
+.cwms-export-page .cwms-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  background: #fff;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cwms-invoice-page .cwms-invoice-table,
+.cwms-export-page .cwms-invoice-table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+
+.cwms-invoice-page .cwms-invoice-table thead th,
+.cwms-export-page .cwms-invoice-table thead th {
+  height: 42px;
+  padding: 7px 9px;
+  background: #2563eb;
+  color: #fff;
+  border-right: 1px solid rgba(255,255,255,.22);
+  border-bottom: 1px solid #1d4ed8;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.cwms-invoice-page .cwms-invoice-table thead th:first-child,
+.cwms-export-page .cwms-invoice-table thead th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.cwms-invoice-page .cwms-invoice-table thead th:last-child,
+.cwms-export-page .cwms-invoice-table thead th:last-child {
+  border-right: 0;
+  border-top-right-radius: 8px;
+}
+
+.cwms-invoice-page .cwms-invoice-table tbody td,
+.cwms-export-page .cwms-invoice-table tbody td {
+  padding: 7px 8px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  color: #1e293b;
+  vertical-align: middle;
+  font-size: 12px;
+}
+
+.cwms-invoice-page .cwms-invoice-table tbody td:last-child,
+.cwms-export-page .cwms-invoice-table tbody td:last-child {
+  border-right: 0;
+}
+
+.cwms-invoice-page .cwms-invoice-table tbody tr:nth-child(even) td,
+.cwms-export-page .cwms-invoice-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.cwms-invoice-page .cwms-invoice-table tbody tr:hover td,
+.cwms-export-page .cwms-invoice-table tbody tr:hover td {
+  background: #f1f5ff;
+}
+
+.cwms-invoice-page .cwms-table-number,
+.cwms-export-page .cwms-table-number {
+  width: 38px;
+  min-width: 38px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.cwms-invoice-page .cwms-table-action,
+.cwms-export-page .cwms-table-action {
+  width: 64px;
+  min-width: 64px;
+  text-align: center;
+}
+
+/* ---------- Table Inputs ---------- */
+
+.cwms-invoice-page .cwms-table-input,
+.cwms-export-page .cwms-table-input {
+  width: 100%;
+  min-width: 95px;
+  height: 36px;
+  padding: 7px 8px;
+  box-sizing: border-box;
+  border: 1px solid #d5dce6;
+  border-radius: 7px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 12px;
+  outline: none;
+}
+
+.cwms-invoice-page .cwms-table-input:focus,
+.cwms-export-page .cwms-table-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.08);
+}
+
+.cwms-invoice-page .cwms-number-input,
+.cwms-export-page .cwms-number-input {
+  text-align: right;
+}
+
+.cwms-invoice-page .cwms-readonly-input,
+.cwms-export-page .cwms-readonly-input {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ---------- Buttons ---------- */
+
+.cwms-invoice-page .cwms-btn,
+.cwms-export-page .cwms-btn {
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.cwms-invoice-page .cwms-btn-primary,
+.cwms-export-page .cwms-btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.cwms-invoice-page .cwms-btn-primary:hover,
+.cwms-export-page .cwms-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.cwms-invoice-page .cwms-btn-secondary,
+.cwms-export-page .cwms-btn-secondary {
+  background: #64748b;
+  color: #fff;
+}
+
+.cwms-invoice-page .cwms-btn-danger,
+.cwms-export-page .cwms-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.cwms-invoice-page .cwms-btn-danger:hover,
+.cwms-export-page .cwms-btn-danger:hover {
+  background: #dc2626;
+}
+
+.cwms-invoice-page .cwms-btn-edit,
+.cwms-export-page .cwms-btn-edit {
+  background: #2563eb;
+  color: #fff;
+}
+
+.cwms-invoice-page .cwms-btn-outline-success,
+.cwms-export-page .cwms-btn-outline-success {
+  background: #fff;
+  color: #16a34a;
+  border-color: #16a34a;
+}
+
+.cwms-invoice-page .cwms-btn-outline-success:hover,
+.cwms-export-page .cwms-btn-outline-success:hover {
+  background: #f0fdf4;
+}
+
+.cwms-invoice-page .cwms-btn-small,
+.cwms-export-page .cwms-btn-small {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+/* ---------- Summary ---------- */
+
+.cwms-invoice-page .cwms-invoice-summary,
+.cwms-export-page .cwms-invoice-summary {
+  margin-top: 14px;
+}
+
+.cwms-invoice-page .cwms-summary-grid,
+.cwms-export-page .cwms-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cwms-invoice-page .cwms-summary-item,
+.cwms-export-page .cwms-summary-item {
+  min-height: 70px;
+  padding: 11px 13px;
+  box-sizing: border-box;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.cwms-invoice-page .cwms-summary-item span,
+.cwms-export-page .cwms-summary-item span {
+  display: block;
+  margin-bottom: 5px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cwms-invoice-page .cwms-summary-item strong,
+.cwms-export-page .cwms-summary-item strong {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cwms-invoice-page .cwms-summary-price,
+.cwms-export-page .cwms-summary-price {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.cwms-invoice-page .cwms-summary-price strong,
+.cwms-export-page .cwms-summary-price strong {
+  color: #1d4ed8;
+}
+
+/* ---------- Form Actions ---------- */
+
+.cwms-invoice-page .cwms-form-actions,
+.cwms-export-page .cwms-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ---------- Documents ---------- */
+
+.cwms-invoice-page .cwms-document-upload-grid,
+.cwms-export-page .cwms-document-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cwms-invoice-page .cwms-help-text,
+.cwms-export-page .cwms-help-text {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.cwms-invoice-page .cwms-file-list,
+.cwms-export-page .cwms-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.cwms-invoice-page .cwms-file-row,
+.cwms-export-page .cwms-file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.cwms-invoice-page .cwms-file-link,
+.cwms-export-page .cwms-file-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.cwms-invoice-page .cwms-file-name,
+.cwms-export-page .cwms-file-name {
+  color: #334155;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.cwms-invoice-page .cwms-empty-text,
+.cwms-export-page .cwms-empty-text {
+  padding: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* ---------- Search / Result ---------- */
+
+.cwms-invoice-page .cwms-result-table,
+.cwms-export-page .cwms-result-table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.cwms-invoice-page .cwms-result-table thead th,
+.cwms-export-page .cwms-result-table thead th {
+  padding: 9px;
+  background: #2563eb;
+  color: #fff;
+  border-right: 1px solid rgba(255,255,255,.22);
+  border-bottom: 1px solid #1d4ed8;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.cwms-invoice-page .cwms-result-table tbody td,
+.cwms-export-page .cwms-result-table tbody td {
+  padding: 8px 9px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  color: #334155;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.cwms-invoice-page .cwms-result-table tbody tr:nth-child(even) td,
+.cwms-export-page .cwms-result-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.cwms-invoice-page .cwms-result-actions,
+.cwms-export-page .cwms-result-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.cwms-invoice-page .cwms-result-empty,
+.cwms-export-page .cwms-result-empty {
+  padding: 26px 12px !important;
+  color: #64748b !important;
+  text-align: center;
+}
+
+/* ---------- Export: source invoice ---------- */
+
+.cwms-export-page .cwms-export-invoice-source {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+.cwms-export-page .cwms-inline-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 1100px) {
+  .cwms-invoice-page .cwms-invoice-header-grid,
+  .cwms-export-page .cwms-export-header-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cwms-invoice-page .cwms-document-upload-grid,
+  .cwms-export-page .cwms-document-upload-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .cwms-invoice-page .dashboard-header,
+  .cwms-export-page .dashboard-header {
+    flex-direction: column;
+  }
+
+  .cwms-invoice-page .cwms-invoice-header-grid,
+  .cwms-export-page .cwms-export-header-grid,
+  .cwms-invoice-page .cwms-summary-grid,
+  .cwms-export-page .cwms-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cwms-invoice-page .panel,
+  .cwms-export-page .panel {
+    padding: 12px;
+  }
+
+  .cwms-invoice-page .cwms-form-actions,
+  .cwms-export-page .cwms-form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .cwms-invoice-page .cwms-form-actions .cwms-btn,
+  .cwms-export-page .cwms-form-actions .cwms-btn {
+    width: 100%;
+  }
+
+  .cwms-export-page .cwms-inline-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
